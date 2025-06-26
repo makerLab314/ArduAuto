@@ -20,7 +20,7 @@ const EXAMPLES = {
     tanz: [
         { type: 'drehe_links', value: null }, { type: 'warten', value: '0.5' }, { type: 'drehe_rechts', value: null },
         { type: 'warten', value: '0.5' }, { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '0.2' },
-        { type: 'rueckwaerts', value: null }, { type: 'warten', 'value': '0.2' }, { type: 'stopp', value: null },
+        { type: 'rueckwaerts', value: null }, { type: 'warten', value: '0.2' }, { type: 'stopp', value: null },
     ]
 };
 
@@ -36,20 +36,20 @@ const RoboProgrammer = {
         this.initSortable();
         this.addEventListeners();
         
-        // VERBESSERUNG: Initialen leeren Zustand für Undo/Redo speichern
+        // Initialen leeren Zustand für Undo/Redo speichern
         this.saveToHistory();
         
-        this.loadFromLocalStorage(); // Lädt Programm, wenn vorhanden
-        this.updateUI(); // Rendert den initialen Zustand
+        this.loadFromLocalStorage();
+        this.updateUI();
     },
 
     cacheDOMElements() {
         this.els = {
             palette: document.getElementById('baustein-palette'),
+            kategorien: document.querySelectorAll('#baustein-palette .kategorie'), // Wichtig für den Fix
             dropzone: document.getElementById('programm-ablauf'),
             undoBtn: document.getElementById('undo-btn'),
             redoBtn: document.getElementById('redo-btn'),
-            generateBtn: document.getElementById('generate-btn'),
             clearBtn: document.getElementById('clear-btn'),
             saveBtn: document.getElementById('save-btn'),
             loadBtn: document.getElementById('load-btn'),
@@ -60,14 +60,15 @@ const RoboProgrammer = {
     },
     
     initSortable() {
-        // Sortable für die Baustein-Palette (Klonen)
-        new Sortable(this.els.palette, {
-            group: { name: 'shared', pull: 'clone', put: false },
-            sort: false,
-            animation: 150,
-            // BUGFIX: Spezifizieren, dass nur .baustein-Elemente ziehbar sind.
-            // Dies verhindert das Ziehen des gesamten <aside>-Containers.
-            draggable: '.baustein'
+        // BUGFIX: Initialisiere SortableJS auf jedem einzelnen Kategorie-Container,
+        // da die `.baustein`-Elemente direkte Kinder davon sind.
+        this.els.kategorien.forEach(kategorie => {
+            new Sortable(kategorie, {
+                group: { name: 'shared', pull: 'clone', put: false },
+                sort: false,
+                animation: 150,
+                draggable: '.baustein' // Dies ist jetzt korrekt im Kontext
+            });
         });
 
         // Sortable für den Programm-Ablauf (Hinzufügen und Umsortieren)
@@ -84,7 +85,7 @@ const RoboProgrammer = {
         this.els.undoBtn.addEventListener('click', () => this.undo());
         this.els.redoBtn.addEventListener('click', () => this.redo());
         this.els.clearBtn.addEventListener('click', () => this.clearProgram());
-        this.els.generateBtn.addEventListener('click', () => this.generateCode());
+        // generateBtn wird jetzt direkt im updateUI aufgerufen, kein extra Listener nötig.
         this.els.saveBtn.addEventListener('click', () => this.saveToLocalStorage());
         this.els.loadBtn.addEventListener('click', () => this.loadFromLocalStorage(true));
         this.els.copyBtn.addEventListener('click', () => this.copyCode());
@@ -106,14 +107,12 @@ const RoboProgrammer = {
 
     // --- Zustands- & History-Management ---
     
-    /** Speichert den aktuellen Zustand in der History. */
     saveToHistory() {
         this.history = this.history.slice(0, this.historyIndex + 1);
         this.history.push(JSON.parse(JSON.stringify(this.state)));
         this.historyIndex++;
     },
     
-    /** Aktualisiert die gesamte Benutzeroberfläche basierend auf dem aktuellen Zustand. */
     updateUI() {
         this.renderBlocks();
         this.updateUndoRedoButtons();
@@ -149,20 +148,31 @@ const RoboProgrammer = {
         this.els.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
     },
 
-    // --- Block-Manipulation ---
+    // --- Block-Manipulation (Kernlogik für Drag-and-Drop) ---
     
     handleBlockAdd(evt) {
         const type = evt.item.dataset.type;
-        const newBlock = { id: `block_${Date.now()}`, type, value: type === 'warten' ? '1' : null };
+        // Erstelle das neue Zustandsobjekt für den Block
+        const newBlock = { 
+            id: `block_${Date.now()}_${Math.random()}`, 
+            type, 
+            value: type === 'warten' ? '1' : (type === 'kommentar' ? '' : null) 
+        };
+        // Füge das Objekt an der richtigen Stelle im Zustands-Array ein
         this.state.splice(evt.newIndex, 0, newBlock);
-        evt.item.remove(); // Entfernt den geklonten Platzhalter von SortableJS
+        
+        // Entferne das temporäre DOM-Element, das SortableJS erstellt hat
+        evt.item.remove();
+        
         this.saveToHistory();
-        this.updateUI();
+        this.updateUI(); // Rendert die UI basierend auf dem neuen Zustand
     },
 
     handleBlockMove(evt) {
+        // Verschiebe den Block im Zustands-Array
         const [movedBlock] = this.state.splice(evt.oldIndex, 1);
         this.state.splice(evt.newIndex, 0, movedBlock);
+        
         this.saveToHistory();
         this.updateUI();
     },
@@ -176,7 +186,7 @@ const RoboProgrammer = {
     duplicateBlock(index) {
         const originalBlock = this.state[index];
         const newBlock = JSON.parse(JSON.stringify(originalBlock));
-        newBlock.id = `block_${Date.now()}`;
+        newBlock.id = `block_${Date.now()}_${Math.random()}`;
         this.state.splice(index + 1, 0, newBlock);
         this.saveToHistory();
         this.updateUI();
@@ -199,7 +209,7 @@ const RoboProgrammer = {
         let contentHTML = '';
         switch (block.type) {
             case 'warten':
-                const numValue = parseFloat(String(block.value).replace(',', '.'));
+                const numValue = parseFloat(String(block.value || '').replace(',', '.'));
                 const isValid = !isNaN(numValue) && numValue >= 0;
                 contentHTML = `warten(<input type="text" class="warten-input ${isValid ? '' : 'invalid'}" value="${block.value || ''}">);`;
                 break;
@@ -224,7 +234,6 @@ const RoboProgrammer = {
         
         const input = el.querySelector('.warten-input, .kommentar-textarea');
         if (input) {
-            // "change" wird verwendet, um nicht bei jeder Tastatureingabe einen History-Eintrag zu erzeugen.
             input.addEventListener('change', () => this.updateBlockValue(index, input.value));
             input.addEventListener('input', () => {
                  if(input.classList.contains('warten-input')) {
@@ -255,17 +264,17 @@ const RoboProgrammer = {
     },
 
     saveToLocalStorage() {
-        localStorage.setItem('roboterProgramm_v3.1', JSON.stringify(this.state));
+        localStorage.setItem('roboterProgramm_v3.2', JSON.stringify(this.state));
         this.showToast('Programm im Browser gespeichert!', 'success');
     },
 
     loadFromLocalStorage(fromButtonClick = false) {
-        const saved = localStorage.getItem('roboterProgramm_v3.1');
+        const saved = localStorage.getItem('roboterProgramm_v3.2');
         if (saved) {
             const savedState = JSON.parse(saved);
             if (fromButtonClick && this.state.length > 0 && !confirm("Gespeichertes Programm laden? Alle aktuellen Änderungen gehen verloren.")) return;
             this.state = savedState;
-            this.saveToHistory(); // Speichert den geladenen Zustand als neuen Punkt in der History
+            this.saveToHistory();
             this.updateUI();
             if(fromButtonClick) this.showToast('Programm aus Speicher geladen.', 'success');
         } else if (fromButtonClick) {
@@ -279,26 +288,23 @@ const RoboProgrammer = {
         if (!this.els.codeOutput) return;
         if (this.state.length === 0) {
             this.els.codeOutput.textContent = "// Programm ist leer. Ziehe Bausteine in den Programmbereich.";
-            Prism.highlightElement(this.els.codeOutput);
-            return;
+        } else {
+            const codeLines = this.state.map(block => {
+                const value = block.value || '';
+                switch (block.type) {
+                    case 'warten':
+                        const numValue = parseFloat(value.replace(',', '.'));
+                        const isValid = !isNaN(numValue) && numValue >= 0;
+                        return isValid ? `  warten(${value.replace(',', '.')});` : `  // FEHLER: Ungültiger Wert für warten(): "${value}"`;
+                    case 'kommentar':
+                        return value.split('\n').map(line => `  // ${line}`).join('\n');
+                    default:
+                        return `  ${block.type}();`;
+                }
+            }).join('\n');
+            const finalCode = `#include "fahrfunktionen.h"\n\nvoid setup() {\n  Serial.begin(9600);\n  Serial.println("Roboter-Auto startklar.");\n\n${codeLines}\n\n  Serial.println("Programm beendet.");\n}\n\nvoid loop() {\n  // Bleibt leer\n}`;
+            this.els.codeOutput.textContent = finalCode;
         }
-
-        const codeLines = this.state.map(block => {
-            const value = block.value || '';
-            switch (block.type) {
-                case 'warten':
-                    const numValue = parseFloat(value.replace(',', '.'));
-                    const isValid = !isNaN(numValue) && numValue >= 0;
-                    return isValid ? `  warten(${value.replace(',', '.')});` : `  // FEHLER: Ungültiger Wert für warten(): "${value}"`;
-                case 'kommentar':
-                    return `  // ${value}`;
-                default:
-                    return `  ${block.type}();`;
-            }
-        }).join('\n');
-
-        const finalCode = `#include "fahrfunktionen.h"\n\nvoid setup() {\n  Serial.begin(9600);\n  Serial.println("Roboter-Auto startklar.");\n\n${codeLines}\n\n  Serial.println("Programm beendet.");\n}\n\nvoid loop() {\n  // Bleibt leer\n}`;
-        this.els.codeOutput.textContent = finalCode;
         Prism.highlightElement(this.els.codeOutput);
     },
 
