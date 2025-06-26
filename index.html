@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roboter-Programmier-Interface</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Roboter-Programmierer</h1>
+            <p>Baue dein Fahrprogramm per Drag-and-Drop zusammen.</p>
+        </header>
+
+        <main class="main-layout">
+            <!-- Linke Spalte: Verfügbare Bausteine -->
+            <aside id="baustein-palette">
+                <h2>Verfügbare Bausteine</h2>
+                
+                <div class="kategorie">
+                    <h3>--- FAHREN ---</h3>
+                    <div class="baustein" draggable="true" data-befehl="vorwaerts_schnell">vorwaerts_schnell();</div>
+                    <div class="baustein" draggable="true" data-befehl="vorwaerts_langsam">vorwaerts_langsam();</div>
+                    <div class="baustein" draggable="true" data-befehl="rueckwaerts">rueckwaerts();</div>
+                    <div class="baustein stopp" draggable="true" data-befehl="stopp">stopp();</div>
+                </div>
+
+                <div class="kategorie">
+                    <h3>--- LENKEN ---</h3>
+                    <div class="baustein" draggable="true" data-befehl="drehe_rechts">drehe_rechts();</div>
+                    <div class="baustein" draggable="true" data-befehl="drehe_links">drehe_links();</div>
+                </div>
+
+                <div class="kategorie">
+                    <h3>--- WARTEN / ZEIT ---</h3>
+                    <div class="baustein warten" draggable="true" data-befehl="warten">
+                        warten(
+                        <input type="number" value="1" step="0.1" min="0" class="warten-input" onmousedown="event.stopPropagation();">
+                        );
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Rechte Spalte: Der Programmablauf -->
+            <section id="programm-bereich">
+                <h2>Dein Programmablauf</h2>
+                <div id="programm-ablauf" class="dropzone">
+                    <div class="platzhalter-text">Ziehe Bausteine hierher</div>
+                </div>
+                <div class="action-buttons">
+                    <button id="generate-btn">Arduino-Code generieren</button>
+                    <button id="clear-btn">Programm löschen</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bereich für den generierten Code -->
+        <section id="code-output-bereich">
+            <h2>Generierter Arduino-Code (.ino)</h2>
+            <div class="code-header">
+                <span>fahrprogramm.ino</span>
+                <button id="copy-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                    <span>Kopieren</span>
+                </button>
+            </div>
+            <pre><code id="code-output">// Klicke auf "Arduino-Code generieren", um den Code hier anzuzeigen.</code></pre>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
