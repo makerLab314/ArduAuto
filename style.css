@@ -97,7 +97,6 @@ h2 {
 .baustein.stopp { background-color: #d0021b; }
 .baustein.warten { background-color: #f5a623; }
 
-/* Spezieller Stil für den Warten-Input */
 .warten-input {
     width: 50px;
     margin: 0 5px;
@@ -141,7 +140,7 @@ h2 {
     height: 100%;
     color: #aaa;
     font-style: italic;
-    pointer-events: none; /* Wichtig, damit Drop-Events durchgehen */
+    pointer-events: none;
 }
 
 /* Buttons */
@@ -179,29 +178,21 @@ button:active {
 }
 
 
-/* Code-Output Bereich */
+/* --- NEUER, VERBESSERTER CODE-AUSGABE-BEREICH --- */
 #code-output-bereich {
     margin-top: 2rem;
 }
 
-#code-output {
-    background-color: #2d2d2d;
-    color: #f8f8f2;
-    padding: 1.5rem;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    white-space: pre;
-    overflow-x: auto;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9em;
-    line-height: 1.5;
-    min-height: 150px;
+.code-container {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden; /* Stellt sicher, dass die Ecken des pre-Tags nicht überstehen */
 }
 
 .code-header {
-    background-color: #3a3a3a;
+    background-color: #2a2a2a; /* Etwas heller als der Code-Hintergrund */
     color: #ccc;
     padding: 8px 15px;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -224,4 +215,18 @@ button:active {
 #copy-btn.copied {
     background-color: var(--secondary-color);
     color: #333;
+}
+
+/* Anpassungen für Prism.js Theme */
+pre[class*="language-"] {
+    margin: 0; /* Entfernt den Standard-Margin von Prism */
+    border-radius: 0 0 var(--border-radius) var(--border-radius); /* Passt die Ecken an den Container an */
+    font-family: 'Fira Code', 'Courier New', monospace; /* Verwendet die bessere Code-Schriftart */
+    font-size: 0.9em;
+    max-height: 400px;
+}
+
+/* Wichtig: Sorgt dafür, dass Zeilenumbrüche im Code-Block korrekt funktionieren */
+.token.comment, .token.prolog, .token.doctype, .token.cdata {
+    white-space: pre-wrap !important;
 }

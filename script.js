@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generate-btn');
     const clearBtn = document.getElementById('clear-btn');
     const copyBtn = document.getElementById('copy-btn');
-    const codeOutput = document.getElementById('code-output');
+    const codeOutput = document.getElementById('code-output'); // Das <code> Element
     const platzhalterText = document.querySelector('.platzhalter-text');
 
     // Funktion zum Anzeigen/Verstecken des Platzhaltertexts
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dropzone-Events
     dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault(); // Notwendig, um ein Drop-Event zu erlauben
+        e.preventDefault();
         dropzone.classList.add('drag-over');
         const afterElement = getDragAfterElement(dropzone, e.clientY);
         const dragging = document.querySelector('.dragging-in-zone');
@@ -49,19 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropzone.classList.remove('drag-over');
-
         const befehl = e.dataTransfer.getData('text/plain');
         const originalBaustein = document.querySelector(`#baustein-palette .baustein[data-befehl='${befehl}']`);
-        
-        // Klonen, damit der Original-Baustein in der Palette bleibt
         const neuerBaustein = originalBaustein.cloneNode(true);
         neuerBaustein.classList.remove('dragging');
-        neuerBaustein.draggable = true; // Geklonte Bausteine sollen umsortierbar sein
-        
-        // Events für das Umsortieren hinzufügen
+        neuerBaustein.draggable = true;
         addDragEventsToClone(neuerBaustein);
-
-        // An der richtigen Position einfügen
         const afterElement = getDragAfterElement(dropzone, e.clientY);
         if (afterElement == null) {
             dropzone.appendChild(neuerBaustein);
@@ -71,10 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlatzhalter();
     });
 
-    // Hilfsfunktion zum Ermitteln der Einfügeposition
     function getDragAfterElement(container, y) {
         const draggableElements = [...container.querySelectorAll('.baustein:not(.dragging-in-zone)')];
-
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
@@ -86,68 +77,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
     
-    // Drag-Events für geklonte/umsortierbare Bausteine
     function addDragEventsToClone(clone) {
         clone.addEventListener('dragstart', (e) => {
-            e.stopPropagation(); // Verhindert Konflikte
+            e.stopPropagation();
             clone.classList.add('dragging-in-zone');
             e.dataTransfer.effectAllowed = 'move';
         });
-
         clone.addEventListener('dragend', (e) => {
             e.stopPropagation();
             clone.classList.remove('dragging-in-zone');
         });
     }
 
-    // Button-Events
-    generateBtn.addEventListener('click', () => {
+    // Funktion zum Generieren und Highlighten des Codes
+    function generateAndHighlightCode() {
         const befehlsSequenz = Array.from(dropzone.querySelectorAll('.baustein'));
+        let generatedCode;
+
         if (befehlsSequenz.length === 0) {
-            codeOutput.textContent = "// Das Programm ist leer. Füge Bausteine hinzu.";
-            return;
-        }
+            generatedCode = "// Das Programm ist leer. Füge Bausteine hinzu.";
+        } else {
+            let befehle = '';
+            befehlsSequenz.forEach(baustein => {
+                const befehl = baustein.dataset.befehl;
+                let zeile = '';
+                if (befehl === 'warten') {
+                    const zeit = baustein.querySelector('.warten-input').value.replace(',', '.');
+                    zeile = `warten(${zeit});`;
+                } else {
+                    zeile = `${befehl}();`;
+                }
+                befehle += `  ${zeile}\n`;
+            });
 
-        let code = '';
-        befehlsSequenz.forEach(baustein => {
-            const befehl = baustein.dataset.befehl;
-            let zeile = '';
-            if (befehl === 'warten') {
-                // Wert aus dem Input-Feld holen und Komma durch Punkt ersetzen
-                const zeit = baustein.querySelector('.warten-input').value.replace(',', '.');
-                zeile = `warten(${zeit});`;
-            } else {
-                zeile = `${befehl}();`;
-            }
-            code += `  ${zeile}\n`;
-        });
-
-        const finalCode = `#include "fahrfunktionen.h"
+            generatedCode = `#include "fahrfunktionen.h"
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Roboter-Auto startklar. Fahrprogramm wird ausgeführt.");
 
   // --- HIER KOMMEN DIE BEFEHLE REIN ---
-${code}
+${befehle}
   Serial.println("Fahrprogramm beendet.");
 }
 
 void loop() {
   // Dieser Bereich wird ignoriert und bleibt leer.
 }`;
-        codeOutput.textContent = finalCode;
-        // Optional: Syntax-Highlighting (hier nicht implementiert)
-    });
+        }
+        
+        // Code in das <code> Element einfügen und dann highlighten
+        codeOutput.textContent = generatedCode;
+        Prism.highlightElement(codeOutput);
+    }
+    
+    // Button-Events
+    generateBtn.addEventListener('click', generateAndHighlightCode);
 
     clearBtn.addEventListener('click', () => {
-        // Alle Bausteine entfernen, außer dem Platzhaltertext
         dropzone.innerHTML = '<div class="platzhalter-text">Ziehe Bausteine hierher</div>';
-        codeOutput.textContent = '// Klicke auf "Arduino-Code generieren", um den Code hier anzuzeigen.';
-        updatePlatzhalter(); // Stellt sicher, dass der Platzhaltertext wieder angezeigt wird.
+        const initialText = '// Klicke auf "Arduino-Code generieren", um den Code hier anzuzeigen.';
+        codeOutput.textContent = initialText;
+        Prism.highlightElement(codeOutput); // Auch den Platzhaltertext stylen
+        updatePlatzhalter();
     });
     
     copyBtn.addEventListener('click', () => {
+        // Wir kopieren den Text direkt aus dem Code-Element, nicht aus der innerHTML
         navigator.clipboard.writeText(codeOutput.textContent).then(() => {
             const originalText = copyBtn.querySelector('span').textContent;
             copyBtn.querySelector('span').textContent = 'Kopiert!';
@@ -163,6 +159,7 @@ void loop() {
         });
     });
 
-    // Initialen Zustand des Platzhalters setzen
+    // Initialen Zustand setzen und highlighten
     updatePlatzhalter();
+    Prism.highlightElement(codeOutput);
 });
