@@ -1,335 +1,297 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM-Elemente ---
-    const bausteinPalette = document.getElementById('baustein-palette');
-    const dropzone = document.getElementById('programm-ablauf');
-    const papierkorb = document.getElementById('papierkorb');
-    const platzhalterText = document.querySelector('.platzhalter-text');
-    
-    // Buttons
-    const generateBtn = document.getElementById('generate-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const copyBtn = document.getElementById('copy-btn');
-    const saveBtn = document.getElementById('save-btn');
-    const loadBtn = document.getElementById('load-btn');
-    
-    // Code & Beispiele
-    const codeOutput = document.getElementById('code-output');
-    const exampleLinks = document.querySelectorAll('.dropdown-content a');
-    
-    // --- Globale Zustände ---
-    let draggedElement = null;
+// Definition der Beispiel-Programme
+const EXAMPLES = {
+    quadrat: [
+        { type: 'kommentar', value: 'Ein Quadrat fahren: 1. Seite' },
+        { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '1.5' }, { type: 'stopp', value: null },
+        { type: 'kommentar', value: 'Um 90 Grad drehen' },
+        { type: 'drehe_rechts', value: null }, { type: 'warten', value: '0.8' }, { type: 'stopp', value: null },
+        { type: 'kommentar', value: '2. Seite' },
+        { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '1.5' }, { type: 'stopp', value: null },
+        // ... kann vervollständigt werden
+    ],
+    pendel: [
+        { type: 'vorwaerts_langsam', value: null }, { type: 'warten', value: '2' }, { type: 'stopp', value: null },
+        { type: 'warten', value: '1' },
+        { type: 'rueckwaerts', value: null }, { type: 'warten', value: '2' }, { type: 'stopp', value: null },
+    ],
+    tanz: [
+        { type: 'drehe_links', value: null }, { type: 'warten', value: '0.5' }, { type: 'drehe_rechts', value: null },
+        { type: 'warten', value: '0.5' }, { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '0.2' },
+        { type: 'rueckwaerts', value: null }, { type: 'warten', value: '0.2' }, { type: 'stopp', value: null },
+    ]
+};
 
-    // --- Beispiel-Programme Daten ---
-    const examples = {
-        quadrat: [
-            { befehl: 'vorwaerts_schnell' },
-            { befehl: 'warten', wert: '1.5' },
-            { befehl: 'stopp' },
-            { befehl: 'drehe_rechts' },
-            { befehl: 'warten', wert: '0.8' },
-            { befehl: 'stopp' },
-            { befehl: 'vorwaerts_schnell' },
-            { befehl: 'warten', wert: '1.5' },
-            // ... kann vervollständigt werden
-        ],
-        pendel: [
-            { befehl: 'vorwaerts_langsam' },
-            { befehl: 'warten', wert: '2' },
-            { befehl: 'stopp' },
-            { befehl: 'warten', wert: '1' },
-            { befehl: 'rueckwaerts' },
-            { befehl: 'warten', wert: '2' },
-            { befehl: 'stopp' },
-        ],
-        tanz: [
-            { befehl: 'drehe_links' },
-            { befehl: 'warten', wert: '0.5' },
-            { befehl: 'drehe_rechts' },
-            { befehl: 'warten', wert: '0.5' },
-            { befehl: 'vorwaerts_schnell' },
-            { befehl: 'warten', wert: '0.2' },
-            { befehl: 'rueckwaerts' },
-            { befehl: 'warten', wert: '0.2' },
-            { befehl: 'stopp' },
-        ]
-    };
+// Haupt-Logik gekapselt in einem Objekt
+const RoboProgrammer = {
+    // DOM-Elemente
+    els: {},
+    // Programm-Zustand
+    state: [],
+    history: [],
+    historyIndex: -1,
 
-    // --- Kernfunktionen ---
+    init() {
+        this.cacheDOMElements();
+        this.initSortable();
+        this.addEventListeners();
+        this.loadFromLocalStorage();
+        this.update();
+    },
 
-    /**
-     * Erstellt einen neuen Baustein im Programmbereich.
-     * @param {string} befehl - Der Befehl des Bausteins (z.B. 'vorwaerts_schnell').
-     * @param {string} [wert] - Der Wert für den Baustein (z.B. für 'warten').
-     * @returns {HTMLElement} Das erstellte Baustein-Element.
-     */
-    function createBlockInZone(befehl, wert) {
-        const originalBaustein = bausteinPalette.querySelector(`.baustein[data-befehl='${befehl}']`);
-        const neuerBaustein = originalBaustein.cloneNode(true);
-        neuerBaustein.removeAttribute('data-tooltip'); // Tooltips nur in Palette
-        neuerBaustein.id = 'block-' + Date.now() + Math.random(); // Eindeutige ID
+    cacheDOMElements() {
+        this.els.palette = document.getElementById('baustein-palette');
+        this.els.dropzone = document.getElementById('programm-ablauf');
+        this.els.undoBtn = document.getElementById('undo-btn');
+        this.els.redoBtn = document.getElementById('redo-btn');
+        this.els.generateBtn = document.getElementById('generate-btn');
+        this.els.clearBtn = document.getElementById('clear-btn');
+        this.els.saveBtn = document.getElementById('save-btn');
+        this.els.loadBtn = document.getElementById('load-btn');
+        this.els.copyBtn = document.getElementById('copy-btn');
+        this.els.codeOutput = document.getElementById('code-output');
+        this.els.exampleLinks = document.querySelectorAll('.dropdown-content a');
+    },
+    
+    initSortable() {
+        // Sortable für die Baustein-Palette (Klonen)
+        new Sortable(this.els.palette, {
+            group: { name: 'shared', pull: 'clone', put: false },
+            sort: false,
+            animation: 150,
+        });
+
+        // Sortable für den Programm-Ablauf
+        new Sortable(this.els.dropzone, {
+            group: 'shared',
+            animation: 150,
+            handle: '.handle',
+            onAdd: (evt) => this.handleBlockAdd(evt),
+            onUpdate: (evt) => this.handleBlockMove(evt),
+        });
+    },
+
+    addEventListeners() {
+        this.els.undoBtn.addEventListener('click', () => this.undo());
+        this.els.redoBtn.addEventListener('click', () => this.redo());
+        this.els.clearBtn.addEventListener('click', () => this.clearProgram());
+        this.els.generateBtn.addEventListener('click', () => this.generateCode());
+        this.els.saveBtn.addEventListener('click', () => this.saveToLocalStorage());
+        this.els.loadBtn.addEventListener('click', () => this.loadFromLocalStorage(true));
+        this.els.copyBtn.addEventListener('click', () => this.copyCode());
         
-        // Duplizier-Icon hinzufügen und anzeigen
-        const duplicateIcon = document.createElement('i');
-        duplicateIcon.className = 'fa-regular fa-copy duplicate-icon';
-        duplicateIcon.style.display = 'block';
+        this.els.exampleLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.loadExample(e.target.dataset.example);
+            });
+        });
+
+        // Tastatur-Shortcuts für Undo/Redo
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); this.undo(); }
+            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); this.redo(); }
+        });
+    },
+
+    // --- Zustands- & History-Management ---
+    
+    update(options = { saveHistory: true }) {
+        if (options.saveHistory) {
+            this.history = this.history.slice(0, this.historyIndex + 1);
+            this.history.push(JSON.parse(JSON.stringify(this.state)));
+            this.historyIndex++;
+        }
+        this.render();
+        this.updateUndoRedoButtons();
+        this.generateCode();
+    },
+    
+    render() {
+        this.els.dropzone.innerHTML = '';
+        this.state.forEach((block, index) => {
+            const blockEl = this.createBlockElement(block, index);
+            this.els.dropzone.appendChild(blockEl);
+        });
+    },
+    
+    undo() {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.update({ saveHistory: false });
+        }
+    },
+
+    redo() {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.update({ saveHistory: false });
+        }
+    },
+    
+    updateUndoRedoButtons() {
+        this.els.undoBtn.disabled = this.historyIndex <= 0;
+        this.els.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+    },
+
+    // --- Block-Manipulation ---
+    
+    handleBlockAdd(evt) {
+        const type = evt.item.dataset.type;
+        const newBlock = { id: `block_${Date.now()}`, type, value: type === 'warten' ? '1' : null };
+        this.state.splice(evt.newIndex, 0, newBlock);
+        evt.item.remove(); // Entfernt den geklonten Platzhalter
+        this.update();
+    },
+
+    handleBlockMove(evt) {
+        const [movedBlock] = this.state.splice(evt.oldIndex, 1);
+        this.state.splice(evt.newIndex, 0, movedBlock);
+        this.update();
+    },
+
+    deleteBlock(index) {
+        this.state.splice(index, 1);
+        this.update();
+    },
+
+    duplicateBlock(index) {
+        const originalBlock = this.state[index];
+        const newBlock = JSON.parse(JSON.stringify(originalBlock));
+        newBlock.id = `block_${Date.now()}`;
+        this.state.splice(index + 1, 0, newBlock);
+        this.update();
+    },
+
+    updateBlockValue(index, value) {
+        this.state[index].value = value;
+        // Für Werteänderungen wollen wir die History nicht für jeden Tastendruck speichern,
+        // daher ein "debounced" Update oder Update bei "change"-Event
+        this.update();
+    },
+
+    createBlockElement(block, index) {
+        const el = document.createElement('div');
+        el.className = 'programm-block';
+        el.dataset.type = block.type;
+        el.dataset.id = block.id;
+
+        let contentHTML = '';
+        switch (block.type) {
+            case 'warten':
+                const numValue = parseFloat(block.value);
+                const isValid = !isNaN(numValue) && numValue >= 0;
+                contentHTML = `warten(<input type="text" class="warten-input ${isValid ? '' : 'invalid'}" value="${block.value}">);`;
+                break;
+            case 'kommentar':
+                contentHTML = `<textarea class="kommentar-textarea" placeholder="Dein Kommentar...">${block.value || ''}</textarea>`;
+                break;
+            default:
+                contentHTML = `${block.type}();`;
+        }
+
+        el.innerHTML = `
+            <i class="fa-solid fa-grip-vertical handle"></i>
+            <div class="content">${contentHTML}</div>
+            <div class="actions">
+                <button class="duplicate-btn" title="Duplizieren"><i class="fa-regular fa-copy"></i></button>
+                <button class="delete-btn" title="Löschen"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        `;
+
+        // Event Listeners für den spezifischen Block
+        el.querySelector('.delete-btn').addEventListener('click', () => this.deleteBlock(index));
+        el.querySelector('.duplicate-btn').addEventListener('click', () => this.duplicateBlock(index));
         
-        // Wrapper für den Inhalt, damit das Icon daneben passt
-        const content = neuerBaustein.innerHTML;
-        neuerBaustein.innerHTML = '';
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'baustein-content';
-        contentWrapper.innerHTML = content;
-        
-        neuerBaustein.appendChild(contentWrapper);
-        neuerBaustein.appendChild(duplicateIcon);
-
-        // Wert für 'warten' Block setzen, falls vorhanden
-        if (befehl === 'warten' && wert) {
-            neuerBaustein.querySelector('.warten-input').value = wert;
-        }
-
-        addInteractionsToBlock(neuerBaustein);
-        return neuerBaustein;
-    }
-    
-    /**
-     * Fügt alle notwendigen Event-Listener zu einem Baustein im Programmbereich hinzu.
-     * @param {HTMLElement} block - Der Baustein, der interaktiv gemacht werden soll.
-     */
-    function addInteractionsToBlock(block) {
-        block.draggable = true;
-
-        // Drag-Events zum Umsortieren und Löschen
-        block.addEventListener('dragstart', (e) => {
-            draggedElement = block;
-            setTimeout(() => {
-                block.classList.add('dragging');
-                papierkorb.classList.add('visible');
-            }, 0);
-        });
-
-        block.addEventListener('dragend', () => {
-            draggedElement.classList.remove('dragging');
-            draggedElement = null;
-            papierkorb.classList.remove('visible', 'drag-over');
-        });
-
-        // Duplizier-Event
-        block.querySelector('.duplicate-icon').addEventListener('click', () => {
-            const wert = block.dataset.befehl === 'warten' ? block.querySelector('.warten-input').value : null;
-            const duplikat = createBlockInZone(block.dataset.befehl, wert);
-            block.after(duplikat);
-            updatePlatzhalter();
-        });
-    }
-
-    /**
-     * Lädt ein Programm aus einem Daten-Array in den Programmbereich.
-     * @param {Array<Object>} programData - Das Array mit den Programmdaten.
-     */
-    function loadProgram(programData) {
-        dropzone.innerHTML = ''; // Altes Programm löschen
-        programData.forEach(item => {
-            const block = createBlockInZone(item.befehl, item.wert);
-            dropzone.appendChild(block);
-        });
-        updatePlatzhalter();
-        generateAndHighlightCode();
-    }
-    
-    /**
-     * Aktualisiert die Sichtbarkeit des Platzhalter-Textes.
-     */
-    const updatePlatzhalter = () => {
-        platzhalterText.style.display = dropzone.children.length > 0 ? 'none' : 'flex';
-    };
-
-
-    // --- Event Listeners ---
-
-    // Drag & Drop von der Palette
-    bausteinPalette.addEventListener('dragstart', (e) => {
-        if (e.target.classList.contains('baustein')) {
-            draggedElement = e.target;
-            draggedElement.classList.add('dragging');
-        }
-    });
-    
-    bausteinPalette.addEventListener('dragend', (e) => {
-        if (e.target.classList.contains('baustein')) {
-            draggedElement.classList.remove('dragging');
-            draggedElement = null;
-        }
-    });
-
-    // Dropzone Events (Baustein hinzufügen/umsortieren)
-    dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(dropzone, e.clientY);
-        if (draggedElement.parentElement !== dropzone) return; // Nur umsortieren
-        if (afterElement == null) {
-            dropzone.appendChild(draggedElement);
-        } else {
-            dropzone.insertBefore(draggedElement, afterElement);
-        }
-    });
-    
-    dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        // Wenn Element aus der Palette kommt, neuen Baustein erstellen
-        if (draggedElement.parentElement === bausteinPalette) {
-            const befehl = draggedElement.dataset.befehl;
-            const wert = befehl === 'warten' ? draggedElement.querySelector('.warten-input').value : null;
-            const neuerBaustein = createBlockInZone(befehl, wert);
-            
-            const afterElement = getDragAfterElement(dropzone, e.clientY);
-            if (afterElement == null) {
-                dropzone.appendChild(neuerBaustein);
-            } else {
-                dropzone.insertBefore(neuerBaustein, afterElement);
-            }
-        }
-        updatePlatzhalter();
-    });
-
-    // Papierkorb Events
-    papierkorb.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        papierkorb.classList.add('drag-over');
-    });
-
-    papierkorb.addEventListener('dragleave', () => {
-        papierkorb.classList.remove('drag-over');
-    });
-
-    papierkorb.addEventListener('drop', (e) => {
-        e.preventDefault();
-        if (draggedElement && draggedElement.parentElement === dropzone) {
-            draggedElement.classList.add('ghost');
-            draggedElement.addEventListener('transitionend', () => {
-                draggedElement.remove();
-                updatePlatzhalter();
-            }, { once: true });
-        }
-    });
-
-    // Button Events
-    generateBtn.addEventListener('click', generateAndHighlightCode);
-
-    clearBtn.addEventListener('click', () => {
-        if (confirm("Möchtest du wirklich das gesamte Programm löschen?")) {
-            dropzone.innerHTML = '';
-            updatePlatzhalter();
-            generateAndHighlightCode();
-        }
-    });
-    
-    saveBtn.addEventListener('click', () => {
-        const programData = Array.from(dropzone.querySelectorAll('.baustein')).map(block => {
-            const data = { befehl: block.dataset.befehl };
-            if (data.befehl === 'warten') {
-                data.wert = block.querySelector('.warten-input').value;
-            }
-            return data;
-        });
-        localStorage.setItem('roboterProgramm', JSON.stringify(programData));
-        alert('Programm gespeichert!');
-    });
-    
-    loadBtn.addEventListener('click', () => {
-        const savedProgram = localStorage.getItem('roboterProgramm');
-        if (savedProgram) {
-            if (dropzone.children.length > 0 && !confirm("Dein aktuelles Programm wird überschrieben. Fortfahren?")) {
-                return;
-            }
-            loadProgram(JSON.parse(savedProgram));
-        } else {
-            alert('Kein gespeichertes Programm gefunden.');
-        }
-    });
-
-    exampleLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const exampleKey = e.target.dataset.example;
-            if (examples[exampleKey]) {
-                if (dropzone.children.length > 0 && !confirm("Dein aktuelles Programm wird durch das Beispiel überschrieben. Fortfahren?")) {
-                    return;
-                }
-                loadProgram(examples[exampleKey]);
-            }
-        });
-    });
-
-    copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(codeOutput.textContent).then(() => {
-            const icon = copyBtn.querySelector('i');
-            const span = copyBtn.querySelector('span');
-            const originalText = span.textContent;
-            
-            icon.className = 'fa-solid fa-check';
-            span.textContent = 'Kopiert!';
-            copyBtn.classList.add('copied');
-            
-            setTimeout(() => {
-                icon.className = 'fa-regular fa-clipboard';
-                span.textContent = originalText;
-                copyBtn.classList.remove('copied');
-            }, 2000);
-        });
-    });
-
-    // --- Hilfsfunktionen & Initialisierung ---
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.baustein:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    function generateAndHighlightCode() {
-        const befehlsSequenz = Array.from(dropzone.querySelectorAll('.baustein'));
-        let code = '';
-        if (befehlsSequenz.length > 0) {
-            befehlsSequenz.forEach(baustein => {
-                const befehl = baustein.dataset.befehl;
-                let zeile = '';
-                if (befehl === 'warten') {
-                    const zeit = baustein.querySelector('.warten-input').value.replace(',', '.');
-                    zeile = `warten(${zeit});`;
-                } else {
-                    zeile = `${befehl}();`;
-                }
-                code += `  ${zeile}\n`;
+        const input = el.querySelector('.warten-input, .kommentar-textarea');
+        if (input) {
+            input.addEventListener('change', () => this.updateBlockValue(index, input.value));
+            input.addEventListener('input', () => { // Live-Validierung
+                 if(input.classList.contains('warten-input')) {
+                    const num = parseFloat(input.value);
+                    input.classList.toggle('invalid', isNaN(num) || num < 0);
+                 }
             });
         }
-        
-        const finalCode = befehlsSequenz.length > 0 ? `#include "fahrfunktionen.h"
+        return el;
+    },
 
-void setup() {
-  Serial.begin(9600);
-  Serial.println("Roboter-Auto startklar. Fahrprogramm wird ausgeführt.");
+    // --- Programm-Aktionen ---
 
-  // --- HIER KOMMEN DIE BEFEHLE REIN ---
-${code}
-  Serial.println("Fahrprogramm beendet.");
-}
+    clearProgram() {
+        if (this.state.length > 0 && confirm("Möchtest du wirklich das gesamte Programm löschen?")) {
+            this.state = [];
+            this.update();
+        }
+    },
 
-void loop() {
-  // Dieser Bereich wird ignoriert und bleibt leer.
-}` : '// Das Programm ist leer. Füge Bausteine hinzu oder lade ein Beispiel.';
-        
-        codeOutput.textContent = finalCode;
-        Prism.highlightElement(codeOutput);
+    loadExample(key) {
+        if (this.state.length > 0 && !confirm("Dein aktuelles Programm wird durch das Beispiel überschrieben. Fortfahren?")) return;
+        this.state = JSON.parse(JSON.stringify(EXAMPLES[key])); // Tiefe Kopie
+        this.update();
+        this.showToast(`Beispiel "${key}" geladen.`, 'success');
+    },
+
+    saveToLocalStorage() {
+        localStorage.setItem('roboterProgramm_v3', JSON.stringify(this.state));
+        this.showToast('Programm gespeichert!', 'success');
+    },
+
+    loadFromLocalStorage(fromButtonClick = false) {
+        const saved = localStorage.getItem('roboterProgramm_v3');
+        if (saved) {
+            const savedState = JSON.parse(saved);
+            if (fromButtonClick && this.state.length > 0 && !confirm("Gespeichertes Programm laden? Dein aktuelles Programm wird überschrieben.")) return;
+            this.state = savedState;
+            this.update();
+            if(fromButtonClick) this.showToast('Programm aus Speicher geladen.', 'success');
+        } else if (fromButtonClick) {
+            this.showToast('Kein gespeichertes Programm gefunden.', 'error');
+        }
+    },
+
+    // --- Code-Generierung & UI ---
+
+    generateCode() {
+        if (this.state.length === 0) {
+            this.els.codeOutput.textContent = "// Programm ist leer.";
+            Prism.highlightElement(this.els.codeOutput);
+            return;
+        }
+
+        const codeLines = this.state.map(block => {
+            switch (block.type) {
+                case 'warten':
+                    const numValue = parseFloat(block.value);
+                    const isValid = !isNaN(numValue) && numValue >= 0;
+                    return isValid ? `  warten(${block.value.replace(',', '.')});` : `  // FEHLER: Ungültiger Wert für warten(): ${block.value}`;
+                case 'kommentar':
+                    return `  // ${block.value || ''}`;
+                default:
+                    return `  ${block.type}();`;
+            }
+        }).join('\n');
+
+        const finalCode = `#include "fahrfunktionen.h"\n\nvoid setup() {\n  Serial.begin(9600);\n  Serial.println("Roboter-Auto startklar.");\n\n${codeLines}\n\n  Serial.println("Programm beendet.");\n}\n\nvoid loop() {\n  // Bleibt leer\n}`;
+        this.els.codeOutput.textContent = finalCode;
+        Prism.highlightElement(this.els.codeOutput);
+    },
+
+    copyCode() {
+        navigator.clipboard.writeText(this.els.codeOutput.textContent).then(() => {
+            this.showToast('Code in die Zwischenablage kopiert!', 'success');
+        });
+    },
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
-    
-    // Initialer Zustand
-    updatePlatzhalter();
-    generateAndHighlightCode();
-});
+};
+
+// Startet die Anwendung, sobald die Seite geladen ist.
+document.addEventListener('DOMContentLoaded', () => RoboProgrammer.init());
