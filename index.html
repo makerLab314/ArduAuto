@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roboter-Programmier-Interface</title>
+    <title>Roboter-Programmierer v2.0</title>
     
-    <!-- Google Fonts: Roboto für Text & Fira Code für Code -->
+    <!-- Google Fonts & Font Awesome Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     
-    <!-- Prism.js CSS für Syntax Highlighting (Okaidia Theme + Line Numbers) -->
+    <!-- Prism.js CSS für Syntax Highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
     
-    <!-- Deine Haupt-CSS-Datei -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="container">
         <header>
-            <h1>Roboter-Programmierer</h1>
-            <p>Baue dein Fahrprogramm per Drag-and-Drop zusammen.</p>
+            <h1><i class="fa-solid fa-robot"></i> Roboter-Programmierer 2.0</h1>
+            <p>Die intuitive Art, deinen Roboter zu steuern.</p>
         </header>
 
         <main class="main-layout">
@@ -31,22 +31,22 @@
                 <h2>Verfügbare Bausteine</h2>
                 
                 <div class="kategorie">
-                    <h3>--- FAHREN ---</h3>
-                    <div class="baustein" draggable="true" data-befehl="vorwaerts_schnell">vorwaerts_schnell();</div>
-                    <div class="baustein" draggable="true" data-befehl="vorwaerts_langsam">vorwaerts_langsam();</div>
-                    <div class="baustein" draggable="true" data-befehl="rueckwaerts">rueckwaerts();</div>
-                    <div class="baustein stopp" draggable="true" data-befehl="stopp">stopp();</div>
+                    <h3><i class="fa-solid fa-car-side"></i> FAHREN</h3>
+                    <div class="baustein" draggable="true" data-befehl="vorwaerts_schnell" data-tooltip="Fährt schnell und geradeaus.">vorwaerts_schnell();</div>
+                    <div class="baustein" draggable="true" data-befehl="vorwaerts_langsam" data-tooltip="Fährt langsam und geradeaus.">vorwaerts_langsam();</div>
+                    <div class="baustein" draggable="true" data-befehl="rueckwaerts" data-tooltip="Fährt geradeaus rückwärts.">rueckwaerts();</div>
+                    <div class="baustein stopp" draggable="true" data-befehl="stopp" data-tooltip="Stoppt die Motoren sofort.">stopp();</div>
                 </div>
 
                 <div class="kategorie">
-                    <h3>--- LENKEN ---</h3>
-                    <div class="baustein" draggable="true" data-befehl="drehe_rechts">drehe_rechts();</div>
-                    <div class="baustein" draggable="true" data-befehl="drehe_links">drehe_links();</div>
+                    <h3><i class="fa-solid fa-arrows-rotate"></i> LENKEN</h3>
+                    <div class="baustein" draggable="true" data-befehl="drehe_rechts" data-tooltip="Dreht auf der Stelle nach rechts.">drehe_rechts();</div>
+                    <div class="baustein" draggable="true" data-befehl="drehe_links" data-tooltip="Dreht auf der Stelle nach links.">drehe_links();</div>
                 </div>
 
                 <div class="kategorie">
-                    <h3>--- WARTEN / ZEIT ---</h3>
-                    <div class="baustein warten" draggable="true" data-befehl="warten">
+                    <h3><i class="fa-solid fa-hourglass-half"></i> WARTEN / ZEIT</h3>
+                    <div class="baustein warten" draggable="true" data-befehl="warten" data-tooltip="Pausiert das Programm für eine bestimmte Zeit.">
                         warten(
                         <input type="number" value="1" step="0.1" min="0" class="warten-input" onmousedown="event.stopPropagation();">
                         );
@@ -54,42 +54,55 @@
                 </div>
             </aside>
 
-            <!-- Rechte Spalte: Der Programmablauf -->
-            <section id="programm-bereich">
-                <h2>Dein Programmablauf</h2>
+            <!-- Rechte Spalte: Der Programmablauf und Aktionen -->
+            <section id="programm-bereich-container">
+                <div class="programm-header">
+                    <h2>Dein Programmablauf</h2>
+                    <div class="speicher-aktionen">
+                        <button id="save-btn" title="Programm im Browser speichern"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
+                        <button id="load-btn" title="Gespeichertes Programm laden"><i class="fa-solid fa-folder-open"></i> Laden</button>
+                        <div class="dropdown">
+                            <button class="dropdown-btn"><i class="fa-solid fa-lightbulb"></i> Beispiele</button>
+                            <div class="dropdown-content">
+                                <a href="#" data-example="quadrat">Fahre ein Quadrat</a>
+                                <a href="#" data-example="pendel">Vor und zurück pendeln</a>
+                                <a href="#" data-example="tanz">Kleiner Tanz</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="programm-ablauf" class="dropzone">
                     <div class="platzhalter-text">Ziehe Bausteine hierher</div>
                 </div>
                 <div class="action-buttons">
-                    <button id="generate-btn">Arduino-Code generieren</button>
-                    <button id="clear-btn">Programm löschen</button>
+                    <button id="generate-btn"><i class="fa-solid fa-cogs"></i> Arduino-Code generieren</button>
+                    <button id="clear-btn" class="danger-btn"><i class="fa-solid fa-trash-alt"></i> Alles Löschen</button>
                 </div>
             </section>
         </main>
 
-        <!-- Bereich für den generierten Code -->
+        <!-- PAPIERKORB -->
+        <div id="papierkorb">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Zum Löschen hierher ziehen</span>
+        </div>
+
+        <!-- Code-Ausgabe bleibt gleich -->
         <section id="code-output-bereich">
             <h2>Generierter Arduino-Code (.ino)</h2>
             <div class="code-container">
                 <div class="code-header">
                     <span>fahrprogramm.ino</span>
-                    <button id="copy-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
-                        <span>Kopieren</span>
-                    </button>
+                    <button id="copy-btn"><i class="fa-regular fa-clipboard"></i> <span>Kopieren</span></button>
                 </div>
-                <!-- Wichtig: Die class "line-numbers" aktiviert die Zeilennummern -->
                 <pre class="line-numbers"><code id="code-output" class="language-cpp">// Klicke auf "Arduino-Code generieren", um den Code hier anzuzeigen.</code></pre>
             </div>
         </section>
     </div>
 
-    <!-- Prism.js JS für Syntax Highlighting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-
-    <!-- Deine Haupt-JS-Datei -->
     <script src="script.js"></script>
 </body>
 </html>
