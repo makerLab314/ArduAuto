@@ -35,18 +35,14 @@ const RoboProgrammer = {
         this.cacheDOMElements();
         this.initSortable();
         this.addEventListeners();
-        
-        // Initialen leeren Zustand für Undo/Redo speichern
         this.saveToHistory();
-        
         this.loadFromLocalStorage();
         this.updateUI();
     },
 
     cacheDOMElements() {
         this.els = {
-            palette: document.getElementById('baustein-palette'),
-            kategorien: document.querySelectorAll('#baustein-palette .kategorie'), // Wichtig für den Fix
+            kategorien: document.querySelectorAll('#baustein-palette .kategorie'),
             dropzone: document.getElementById('programm-ablauf'),
             undoBtn: document.getElementById('undo-btn'),
             redoBtn: document.getElementById('redo-btn'),
@@ -60,18 +56,15 @@ const RoboProgrammer = {
     },
     
     initSortable() {
-        // BUGFIX: Initialisiere SortableJS auf jedem einzelnen Kategorie-Container,
-        // da die `.baustein`-Elemente direkte Kinder davon sind.
         this.els.kategorien.forEach(kategorie => {
             new Sortable(kategorie, {
                 group: { name: 'shared', pull: 'clone', put: false },
                 sort: false,
                 animation: 150,
-                draggable: '.baustein' // Dies ist jetzt korrekt im Kontext
+                draggable: '.baustein'
             });
         });
 
-        // Sortable für den Programm-Ablauf (Hinzufügen und Umsortieren)
         new Sortable(this.els.dropzone, {
             group: 'shared',
             animation: 150,
@@ -85,7 +78,6 @@ const RoboProgrammer = {
         this.els.undoBtn.addEventListener('click', () => this.undo());
         this.els.redoBtn.addEventListener('click', () => this.redo());
         this.els.clearBtn.addEventListener('click', () => this.clearProgram());
-        // generateBtn wird jetzt direkt im updateUI aufgerufen, kein extra Listener nötig.
         this.els.saveBtn.addEventListener('click', () => this.saveToLocalStorage());
         this.els.loadBtn.addEventListener('click', () => this.loadFromLocalStorage(true));
         this.els.copyBtn.addEventListener('click', () => this.copyCode());
@@ -148,28 +140,45 @@ const RoboProgrammer = {
         this.els.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
     },
 
-    // --- Block-Manipulation (Kernlogik für Drag-and-Drop) ---
+    // --- Block-Manipulation ---
     
     handleBlockAdd(evt) {
+        // --- DER ENTSCHEIDENDE FIX GEGEN DAS "SPRINGEN" ---
         const type = evt.item.dataset.type;
-        // Erstelle das neue Zustandsobjekt für den Block
-        const newBlock = { 
+        const newIndex = evt.newIndex;
+        
+        // 1. Erstelle das neue Zustandsobjekt für den Block.
+        const newBlockState = { 
             id: `block_${Date.now()}_${Math.random()}`, 
             type, 
             value: type === 'warten' ? '1' : (type === 'kommentar' ? '' : null) 
         };
-        // Füge das Objekt an der richtigen Stelle im Zustands-Array ein
-        this.state.splice(evt.newIndex, 0, newBlock);
         
-        // Entferne das temporäre DOM-Element, das SortableJS erstellt hat
-        evt.item.remove();
+        // 2. Erstelle das finale DOM-Element für diesen einen neuen Block.
+        const newBlockElement = this.createBlockElement(newBlockState, newIndex);
         
+        // 3. Ersetze das temporäre Platzhalter-Element von SortableJS direkt
+        //    mit unserem finalen, voll funktionsfähigen Element. Dies ist der
+        //    Schlüssel, um den "Sprung" zu vermeiden.
+        evt.item.replaceWith(newBlockElement);
+        
+        // 4. Aktualisiere das Zustands-Array an der korrekten Position.
+        this.state.splice(newIndex, 0, newBlockState);
+        
+        // 5. Speichere den neuen Zustand und update UI-Teile, die nicht die
+        //    gesamte Blockliste betreffen (Buttons, Code-Ausgabe).
         this.saveToHistory();
-        this.updateUI(); // Rendert die UI basierend auf dem neuen Zustand
+        // Ein komplettes `updateUI()` würde den Sprung wieder einführen, daher
+        // rufen wir die benötigten Funktionen einzeln und gezielt auf.
+        this.updateUndoRedoButtons();
+        this.generateCode();
     },
 
     handleBlockMove(evt) {
-        // Verschiebe den Block im Zustands-Array
+        // Da die DOM-Elemente bereits durch SortableJS verschoben wurden,
+        // müssen wir nur unser Zustands-Array anpassen und dann die UI
+        // komplett neu rendern, um alle Event-Listener mit korrekten
+        // Indizes neu zu binden.
         const [movedBlock] = this.state.splice(evt.oldIndex, 1);
         this.state.splice(evt.newIndex, 0, movedBlock);
         
@@ -264,12 +273,12 @@ const RoboProgrammer = {
     },
 
     saveToLocalStorage() {
-        localStorage.setItem('roboterProgramm_v3.2', JSON.stringify(this.state));
+        localStorage.setItem('roboterProgramm_v3.3', JSON.stringify(this.state));
         this.showToast('Programm im Browser gespeichert!', 'success');
     },
 
     loadFromLocalStorage(fromButtonClick = false) {
-        const saved = localStorage.getItem('roboterProgramm_v3.2');
+        const saved = localStorage.getItem('roboterProgramm_v3.3');
         if (saved) {
             const savedState = JSON.parse(saved);
             if (fromButtonClick && this.state.length > 0 && !confirm("Gespeichertes Programm laden? Alle aktuellen Änderungen gehen verloren.")) return;
