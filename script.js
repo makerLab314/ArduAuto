@@ -7,7 +7,10 @@ const EXAMPLES = {
         { type: 'drehe_rechts', value: null }, { type: 'warten', value: '0.8' }, { type: 'stopp', value: null },
         { type: 'kommentar', value: '2. Seite' },
         { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '1.5' }, { type: 'stopp', value: null },
-        // ... kann vervollständigt werden
+        { type: 'kommentar', value: '3. Seite' },
+        { type: 'drehe_rechts', value: null }, { type: 'warten', value: '0.8' }, { type: 'stopp', value: null },
+        { type: 'kommentar', value: '4. Seite' },
+        { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '1.5' }, { type: 'stopp', value: null },
     ],
     pendel: [
         { type: 'vorwaerts_langsam', value: null }, { type: 'warten', value: '2' }, { type: 'stopp', value: null },
@@ -17,15 +20,13 @@ const EXAMPLES = {
     tanz: [
         { type: 'drehe_links', value: null }, { type: 'warten', value: '0.5' }, { type: 'drehe_rechts', value: null },
         { type: 'warten', value: '0.5' }, { type: 'vorwaerts_schnell', value: null }, { type: 'warten', value: '0.2' },
-        { type: 'rueckwaerts', value: null }, { type: 'warten', value: '0.2' }, { type: 'stopp', value: null },
+        { type: 'rueckwaerts', value: null }, { type: 'warten', 'value': '0.2' }, { type: 'stopp', value: null },
     ]
 };
 
 // Haupt-Logik gekapselt in einem Objekt
 const RoboProgrammer = {
-    // DOM-Elemente
     els: {},
-    // Programm-Zustand
     state: [],
     history: [],
     historyIndex: -1,
@@ -34,22 +35,28 @@ const RoboProgrammer = {
         this.cacheDOMElements();
         this.initSortable();
         this.addEventListeners();
-        this.loadFromLocalStorage();
-        this.update();
+        
+        // VERBESSERUNG: Initialen leeren Zustand für Undo/Redo speichern
+        this.saveToHistory();
+        
+        this.loadFromLocalStorage(); // Lädt Programm, wenn vorhanden
+        this.updateUI(); // Rendert den initialen Zustand
     },
 
     cacheDOMElements() {
-        this.els.palette = document.getElementById('baustein-palette');
-        this.els.dropzone = document.getElementById('programm-ablauf');
-        this.els.undoBtn = document.getElementById('undo-btn');
-        this.els.redoBtn = document.getElementById('redo-btn');
-        this.els.generateBtn = document.getElementById('generate-btn');
-        this.els.clearBtn = document.getElementById('clear-btn');
-        this.els.saveBtn = document.getElementById('save-btn');
-        this.els.loadBtn = document.getElementById('load-btn');
-        this.els.copyBtn = document.getElementById('copy-btn');
-        this.els.codeOutput = document.getElementById('code-output');
-        this.els.exampleLinks = document.querySelectorAll('.dropdown-content a');
+        this.els = {
+            palette: document.getElementById('baustein-palette'),
+            dropzone: document.getElementById('programm-ablauf'),
+            undoBtn: document.getElementById('undo-btn'),
+            redoBtn: document.getElementById('redo-btn'),
+            generateBtn: document.getElementById('generate-btn'),
+            clearBtn: document.getElementById('clear-btn'),
+            saveBtn: document.getElementById('save-btn'),
+            loadBtn: document.getElementById('load-btn'),
+            copyBtn: document.getElementById('copy-btn'),
+            codeOutput: document.getElementById('code-output'),
+            exampleLinks: document.querySelectorAll('.dropdown-content a')
+        };
     },
     
     initSortable() {
@@ -58,9 +65,12 @@ const RoboProgrammer = {
             group: { name: 'shared', pull: 'clone', put: false },
             sort: false,
             animation: 150,
+            // BUGFIX: Spezifizieren, dass nur .baustein-Elemente ziehbar sind.
+            // Dies verhindert das Ziehen des gesamten <aside>-Containers.
+            draggable: '.baustein'
         });
 
-        // Sortable für den Programm-Ablauf
+        // Sortable für den Programm-Ablauf (Hinzufügen und Umsortieren)
         new Sortable(this.els.dropzone, {
             group: 'shared',
             animation: 150,
@@ -86,27 +96,31 @@ const RoboProgrammer = {
             });
         });
 
-        // Tastatur-Shortcuts für Undo/Redo
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); this.undo(); }
-            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); this.redo(); }
+            if (e.ctrlKey) {
+                if (e.key === 'z') { e.preventDefault(); this.undo(); }
+                if (e.key === 'y') { e.preventDefault(); this.redo(); }
+            }
         });
     },
 
     // --- Zustands- & History-Management ---
     
-    update(options = { saveHistory: true }) {
-        if (options.saveHistory) {
-            this.history = this.history.slice(0, this.historyIndex + 1);
-            this.history.push(JSON.parse(JSON.stringify(this.state)));
-            this.historyIndex++;
-        }
-        this.render();
+    /** Speichert den aktuellen Zustand in der History. */
+    saveToHistory() {
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        this.history.push(JSON.parse(JSON.stringify(this.state)));
+        this.historyIndex++;
+    },
+    
+    /** Aktualisiert die gesamte Benutzeroberfläche basierend auf dem aktuellen Zustand. */
+    updateUI() {
+        this.renderBlocks();
         this.updateUndoRedoButtons();
         this.generateCode();
     },
     
-    render() {
+    renderBlocks() {
         this.els.dropzone.innerHTML = '';
         this.state.forEach((block, index) => {
             const blockEl = this.createBlockElement(block, index);
@@ -118,7 +132,7 @@ const RoboProgrammer = {
         if (this.historyIndex > 0) {
             this.historyIndex--;
             this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
-            this.update({ saveHistory: false });
+            this.updateUI();
         }
     },
 
@@ -126,7 +140,7 @@ const RoboProgrammer = {
         if (this.historyIndex < this.history.length - 1) {
             this.historyIndex++;
             this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
-            this.update({ saveHistory: false });
+            this.updateUI();
         }
     },
     
@@ -141,19 +155,22 @@ const RoboProgrammer = {
         const type = evt.item.dataset.type;
         const newBlock = { id: `block_${Date.now()}`, type, value: type === 'warten' ? '1' : null };
         this.state.splice(evt.newIndex, 0, newBlock);
-        evt.item.remove(); // Entfernt den geklonten Platzhalter
-        this.update();
+        evt.item.remove(); // Entfernt den geklonten Platzhalter von SortableJS
+        this.saveToHistory();
+        this.updateUI();
     },
 
     handleBlockMove(evt) {
         const [movedBlock] = this.state.splice(evt.oldIndex, 1);
         this.state.splice(evt.newIndex, 0, movedBlock);
-        this.update();
+        this.saveToHistory();
+        this.updateUI();
     },
 
     deleteBlock(index) {
         this.state.splice(index, 1);
-        this.update();
+        this.saveToHistory();
+        this.updateUI();
     },
 
     duplicateBlock(index) {
@@ -161,14 +178,16 @@ const RoboProgrammer = {
         const newBlock = JSON.parse(JSON.stringify(originalBlock));
         newBlock.id = `block_${Date.now()}`;
         this.state.splice(index + 1, 0, newBlock);
-        this.update();
+        this.saveToHistory();
+        this.updateUI();
     },
 
     updateBlockValue(index, value) {
-        this.state[index].value = value;
-        // Für Werteänderungen wollen wir die History nicht für jeden Tastendruck speichern,
-        // daher ein "debounced" Update oder Update bei "change"-Event
-        this.update();
+        if (this.state[index]) {
+            this.state[index].value = value;
+            this.saveToHistory();
+            this.updateUI();
+        }
     },
 
     createBlockElement(block, index) {
@@ -180,9 +199,9 @@ const RoboProgrammer = {
         let contentHTML = '';
         switch (block.type) {
             case 'warten':
-                const numValue = parseFloat(block.value);
+                const numValue = parseFloat(String(block.value).replace(',', '.'));
                 const isValid = !isNaN(numValue) && numValue >= 0;
-                contentHTML = `warten(<input type="text" class="warten-input ${isValid ? '' : 'invalid'}" value="${block.value}">);`;
+                contentHTML = `warten(<input type="text" class="warten-input ${isValid ? '' : 'invalid'}" value="${block.value || ''}">);`;
                 break;
             case 'kommentar':
                 contentHTML = `<textarea class="kommentar-textarea" placeholder="Dein Kommentar...">${block.value || ''}</textarea>`;
@@ -200,16 +219,16 @@ const RoboProgrammer = {
             </div>
         `;
 
-        // Event Listeners für den spezifischen Block
         el.querySelector('.delete-btn').addEventListener('click', () => this.deleteBlock(index));
         el.querySelector('.duplicate-btn').addEventListener('click', () => this.duplicateBlock(index));
         
         const input = el.querySelector('.warten-input, .kommentar-textarea');
         if (input) {
+            // "change" wird verwendet, um nicht bei jeder Tastatureingabe einen History-Eintrag zu erzeugen.
             input.addEventListener('change', () => this.updateBlockValue(index, input.value));
-            input.addEventListener('input', () => { // Live-Validierung
+            input.addEventListener('input', () => {
                  if(input.classList.contains('warten-input')) {
-                    const num = parseFloat(input.value);
+                    const num = parseFloat(input.value.replace(',', '.'));
                     input.classList.toggle('invalid', isNaN(num) || num < 0);
                  }
             });
@@ -220,31 +239,34 @@ const RoboProgrammer = {
     // --- Programm-Aktionen ---
 
     clearProgram() {
-        if (this.state.length > 0 && confirm("Möchtest du wirklich das gesamte Programm löschen?")) {
+        if (this.state.length > 0 && confirm("Möchtest du das gesamte Programm wirklich unwiderruflich löschen?")) {
             this.state = [];
-            this.update();
+            this.saveToHistory();
+            this.updateUI();
         }
     },
 
     loadExample(key) {
-        if (this.state.length > 0 && !confirm("Dein aktuelles Programm wird durch das Beispiel überschrieben. Fortfahren?")) return;
-        this.state = JSON.parse(JSON.stringify(EXAMPLES[key])); // Tiefe Kopie
-        this.update();
+        if (this.state.length > 0 && !confirm("Dein aktuelles Programm wird durch das Beispiel ersetzt. Fortfahren?")) return;
+        this.state = JSON.parse(JSON.stringify(EXAMPLES[key]));
+        this.saveToHistory();
+        this.updateUI();
         this.showToast(`Beispiel "${key}" geladen.`, 'success');
     },
 
     saveToLocalStorage() {
-        localStorage.setItem('roboterProgramm_v3', JSON.stringify(this.state));
-        this.showToast('Programm gespeichert!', 'success');
+        localStorage.setItem('roboterProgramm_v3.1', JSON.stringify(this.state));
+        this.showToast('Programm im Browser gespeichert!', 'success');
     },
 
     loadFromLocalStorage(fromButtonClick = false) {
-        const saved = localStorage.getItem('roboterProgramm_v3');
+        const saved = localStorage.getItem('roboterProgramm_v3.1');
         if (saved) {
             const savedState = JSON.parse(saved);
-            if (fromButtonClick && this.state.length > 0 && !confirm("Gespeichertes Programm laden? Dein aktuelles Programm wird überschrieben.")) return;
+            if (fromButtonClick && this.state.length > 0 && !confirm("Gespeichertes Programm laden? Alle aktuellen Änderungen gehen verloren.")) return;
             this.state = savedState;
-            this.update();
+            this.saveToHistory(); // Speichert den geladenen Zustand als neuen Punkt in der History
+            this.updateUI();
             if(fromButtonClick) this.showToast('Programm aus Speicher geladen.', 'success');
         } else if (fromButtonClick) {
             this.showToast('Kein gespeichertes Programm gefunden.', 'error');
@@ -254,20 +276,22 @@ const RoboProgrammer = {
     // --- Code-Generierung & UI ---
 
     generateCode() {
+        if (!this.els.codeOutput) return;
         if (this.state.length === 0) {
-            this.els.codeOutput.textContent = "// Programm ist leer.";
+            this.els.codeOutput.textContent = "// Programm ist leer. Ziehe Bausteine in den Programmbereich.";
             Prism.highlightElement(this.els.codeOutput);
             return;
         }
 
         const codeLines = this.state.map(block => {
+            const value = block.value || '';
             switch (block.type) {
                 case 'warten':
-                    const numValue = parseFloat(block.value);
+                    const numValue = parseFloat(value.replace(',', '.'));
                     const isValid = !isNaN(numValue) && numValue >= 0;
-                    return isValid ? `  warten(${block.value.replace(',', '.')});` : `  // FEHLER: Ungültiger Wert für warten(): ${block.value}`;
+                    return isValid ? `  warten(${value.replace(',', '.')});` : `  // FEHLER: Ungültiger Wert für warten(): "${value}"`;
                 case 'kommentar':
-                    return `  // ${block.value || ''}`;
+                    return `  // ${value}`;
                 default:
                     return `  ${block.type}();`;
             }
@@ -285,13 +309,13 @@ const RoboProgrammer = {
     },
 
     showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.textContent = message;
-        document.getElementById('toast-container').appendChild(toast);
+        container.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }
 };
 
-// Startet die Anwendung, sobald die Seite geladen ist.
 document.addEventListener('DOMContentLoaded', () => RoboProgrammer.init());
