@@ -5,9 +5,9 @@
     --danger-color: #d0021b;
     --warning-color: #f5a623;
     --success-color: #2ecc71;
-    --background-color: #f4f7f6;
+    --background-color: #4b4b4bbd;
     --surface-color: #ffffff;
-    --text-color: #333;
+    --text-color: #ffffff;
     --border-color: #e0e0e0;
     --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --border-radius: 8px;
@@ -20,9 +20,9 @@ body {
 }
 
 .container { max-width: 1300px; margin: 0 auto; }
-header { text-align: center; margin-bottom: 2rem; }
-header h1 { color: var(--primary-color); }
-header h1 i { margin-right: 10px; }
+header { text-align: center; margin-bottom: 2rem; font-family: 'Exo 2', sans-serif; }
+header h1 { color: var(--primary-color); font-family: 'Exo 2', sans-serif; }
+header h1 i { margin-right: 10px; font-family: 'Exo 2', sans-serif; }
 
 .main-layout { display: flex; gap: 2rem; align-items: flex-start; }
 #baustein-palette { flex: 1; background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); position: sticky; top: 2rem; }
@@ -67,7 +67,7 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
     height: 100%;
     align-items: center;
     justify-content: center;
-    color: #aaa;
+    color: #a0b8ec;
     font-style: italic;
     font-size: 0.9em;
 }
@@ -86,9 +86,9 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
     position: relative;
     overflow: hidden;
 }
-.programm-block .handle { cursor: grab; color: #ccc; margin-right: 10px; align-self: flex-start; padding-top: 4px; } /* Angepasst für If/Else */
+.programm-block .handle { cursor: grab; color: #ccc; margin-right: 10px; align-self: flex-start; padding-top: 4px; font-family: 'Exo 2', sans-serif; } /* Angepasst für If/Else */
 .programm-block .content { flex-grow: 1; }
-.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; align-self: flex-start; padding-top: 2px; } /* Angepasst für If/Else */
+.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; align-self: flex-start; padding-top: 2px; font-family: 'Exo 2', sans-serif; } /* Angepasst für If/Else */
 .programm-block .actions button {
     background: none; border: none; color: #aaa; cursor: pointer;
     width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
@@ -122,13 +122,13 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
 
 /* Stile für Inputs */
 .programm-block .warten-input {
-    width: 60px; border: 1px solid #ccc; border-radius: 4px; text-align: center;
+    width: 60px; border: 1px solid #ccc; border-radius: 6px; text-align: center;
     padding: 4px; font-family: 'Courier New', monospace;
 }
 .programm-block .warten-input.invalid { border-color: var(--danger-color); background: #fff0f0; outline-color: var(--danger-color); }
 .programm-block .kommentar-textarea {
-    width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 4px;
-    font-family: 'Roboto', sans-serif; resize: vertical; min-height: 25px;
+    width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 4px;
+    font-family: 'Exo 2', sans-serif;  resize: vertical; min-height: 25px;
 }
 
 /* UI-Elemente */
