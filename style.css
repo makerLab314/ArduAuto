@@ -5,17 +5,18 @@
     --danger-color: #d0021b;
     --warning-color: #f5a623;
     --success-color: #2ecc71;
-    --background-color: #4b4b4bbd;
-    --surface-color: #ffffff;
-    --text-color: #ffffff;
-    --border-color: #e0e0e0;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --background-color: #121212; /* Dark mode background */
+    --surface-color: #1E1E1E; /* Dark mode surface */
+    --text-color: #FFFFFF; /* Dark mode text */
+    --border-color: #333333; /* Dark mode border */
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.25); /* Adjusted shadow for dark mode */
     --border-radius: 8px;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
     background-color: var(--background-color);
+    color: var(--text-color); /* Ensure body text is light */
     margin: 0; padding: 2rem;
 }
 
@@ -23,13 +24,14 @@ body {
 header { text-align: center; margin-bottom: 2rem; font-family: 'Exo 2', sans-serif; }
 header h1 { color: var(--primary-color); font-family: 'Exo 2', sans-serif; }
 header h1 i { margin-right: 10px; font-family: 'Exo 2', sans-serif; }
+header p { color: var(--text-color); } /* Ensure header paragraph text is light */
 
 .main-layout { display: flex; gap: 2rem; align-items: flex-start; }
 #baustein-palette { flex: 1; background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); position: sticky; top: 2rem; }
 #programm-bereich-container { flex: 2; }
-h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin: 0 0 1rem 0; }
+h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin: 0 0 1rem 0; color: var(--text-color); } /* Ensure h2 text is light */
 .kategorie { margin-bottom: 1.5rem; }
-.kategorie h3 { font-size: 0.9em; color: #777; margin-bottom: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.kategorie h3 { font-size: 0.9em; color: #bbbbbb; margin-bottom: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; } /* Lighter color for category headers */
 
 /* Bausteine in der Palette */
 #baustein-palette .baustein {
@@ -67,12 +69,12 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
     height: 100%;
     align-items: center;
     justify-content: center;
-    color: #a0b8ec;
+    color: #5a76a5; /* Adjusted color for dark mode */
     font-style: italic;
     font-size: 0.9em;
 }
 #programm-ablauf:empty::before { min-height: 380px; content: "Ziehe Bausteine hierher oder lade ein Beispiel"; }
-#programm-ablauf.sortable-ghost { background: rgba(74, 144, 226, 0.1); } 
+#programm-ablauf.sortable-ghost { background: rgba(74, 144, 226, 0.05); } /* Adjusted for dark mode */
 
 /* Einzelne Blöcke im Programm-Ablauf */
 .programm-block {
@@ -81,19 +83,20 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
     padding: 8px;
     margin-bottom: 8px;
     border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Adjusted shadow for dark mode */
+    background: var(--surface-color); /* Use surface color for blocks */
+    color: var(--text-color); /* Ensure text in blocks is light */
     position: relative;
     overflow: hidden;
 }
-.programm-block .handle { cursor: grab; color: #ccc; margin-right: 10px; align-self: flex-start; padding-top: 4px; font-family: 'Exo 2', sans-serif; } /* Angepasst für If/Else */
+.programm-block .handle { cursor: grab; color: #888; margin-right: 10px; align-self: flex-start; padding-top: 4px; font-family: 'Exo 2', sans-serif; }
 .programm-block .content { flex-grow: 1; }
-.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; align-self: flex-start; padding-top: 2px; font-family: 'Exo 2', sans-serif; } /* Angepasst für If/Else */
+.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; align-self: flex-start; padding-top: 2px; font-family: 'Exo 2', sans-serif; }
 .programm-block .actions button {
     background: none; border: none; color: #aaa; cursor: pointer;
     width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
 }
-.programm-block .actions button:hover { background: #f0f0f0; color: #333; }
+.programm-block .actions button:hover { background: #333; color: #eee; } /* Darker hover for buttons */
 .programm-block .actions .delete-btn:hover { color: var(--danger-color); }
 
 /* Block-spezifische Stile */
@@ -105,30 +108,34 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
 
 /* Stile für den If/Else Block */
 .if-else-container { display: flex; flex-direction: column; width: 100%; }
-.if-else-header { display: flex; align-items: center; padding: 4px; background: #fdf6ff; border-radius: 4px; }
-.if-else-header code { background-color: rgba(142, 68, 173, 0.1); padding: 2px 6px; border-radius: 4px; }
+.if-else-header { display: flex; align-items: center; padding: 4px; background: #2c2c2c; border-radius: 4px; } /* Darker background for if-else header */
+.if-else-header code { background-color: rgba(142, 68, 173, 0.2); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; } /* Adjusted for dark mode */
 .if-branch, .else-branch { margin-left: 20px; margin-top: 8px; }
 .branch-header { font-weight: bold; font-family: 'Courier New', monospace; font-size: 0.9em; padding: 4px; }
 .if-branch .branch-header { color: var(--logic-color); }
-.else-branch .branch-header { color: #7f8c8d; }
+.else-branch .branch-header { color: #999999; } /* Lighter color for else branch header */
 .nested-dropzone {
     min-height: 60px;
-    background: #fafafa;
-    border: 1px dashed #ddd;
+    background: #252525; /* Darker background for nested dropzone */
+    border: 1px dashed #444444; /* Darker border for nested dropzone */
     border-radius: 6px;
     padding: 10px;
     margin-top: 4px;
 }
+.nested-dropzone:empty::before { color: #5a76a5; } /* Ensure placeholder text is visible */
+
 
 /* Stile für Inputs */
 .programm-block .warten-input {
-    width: 60px; border: 1px solid #ccc; border-radius: 6px; text-align: center;
+    width: 60px; border: 1px solid #555; border-radius: 6px; text-align: center;
     padding: 4px; font-family: 'Courier New', monospace;
+    background-color: #333; color: var(--text-color); /* Dark mode for inputs */
 }
-.programm-block .warten-input.invalid { border-color: var(--danger-color); background: #fff0f0; outline-color: var(--danger-color); }
+.programm-block .warten-input.invalid { border-color: var(--danger-color); background: #402020; outline-color: var(--danger-color); } /* Darker invalid input */
 .programm-block .kommentar-textarea {
-    width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 4px;
+    width: 100%; border: 1px solid #555; border-radius: 6px; padding: 4px;
     font-family: 'Exo 2', sans-serif;  resize: vertical; min-height: 25px;
+    background-color: #333; color: var(--text-color); /* Dark mode for textarea */
 }
 
 /* UI-Elemente */
@@ -136,31 +143,33 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
 .top-actions { display: flex; gap: 0.5rem; }
 .top-actions button, .dropdown-btn { font-size: 0.9em; padding: 8px 12px; }
 button { background: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-button:hover:not(:disabled) { filter: brightness(1.1); }
+button:hover:not(:disabled) { filter: brightness(1.2); } /* Adjusted brightness for dark mode */
 button:active:not(:disabled) { transform: scale(0.98); }
-button:disabled { background: #ccc; cursor: not-allowed; }
-button.danger-btn { background-color: #e74c3c; }
+button:disabled { background: #555; color: #aaa; cursor: not-allowed; } /* Darker disabled button */
+button.danger-btn { background-color: #c0392b; } /* Slightly adjusted danger color */
 
 /* Dropdown */
 .dropdown { position: relative; display: inline-block; }
-.dropdown-content { display: none; position: absolute; background-color: #f9f9f9; min-width: 160px; box-shadow: var(--shadow); z-index: 1; border-radius: 5px; overflow: hidden; right: 0; }
-.dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9em; }
-.dropdown-content a:hover { background-color: #f1f1f1; }
+.dropdown-content { display: none; position: absolute; background-color: var(--surface-color); min-width: 160px; box-shadow: var(--shadow); z-index: 1; border-radius: 5px; overflow: hidden; right: 0; border: 1px solid var(--border-color); }
+.dropdown-content a { color: var(--text-color); padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9em; }
+.dropdown-content a:hover { background-color: #333333; } /* Darker hover for dropdown items */
 .dropdown:hover .dropdown-content { display: block; }
 
 /* Toast-Benachrichtigungen */
 #toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; }
-.toast { background: #333; color: white; padding: 15px 20px; border-radius: 5px; margin-bottom: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards; }
-.toast.success { background: var(--success-color); }
-.toast.error { background: var(--danger-color); }
+.toast { background: #444; color: white; padding: 15px 20px; border-radius: 5px; margin-bottom: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards; }
+.toast.success { background: var(--success-color); color: #1E1E1E; } /* Ensure text is readable on success */
+.toast.error { background: var(--danger-color); color: white; }
 @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
 
 /* Code-Output */
 #code-output-bereich { margin-top: 2rem; }
 .code-header-container { display: flex; justify-content: space-between; align-items: center; } /* NEU */
-#loop-toggle-container { display: flex; align-items: center; gap: 15px; font-size: 0.9em; } /* NEU */
+#loop-toggle-container { display: flex; align-items: center; gap: 15px; font-size: 0.9em; color: var(--text-color); } /* NEU, ensure text is light */
 #loop-toggle-container label { display: flex; align-items: center; gap: 5px; cursor: pointer; } /* NEU */
 .code-container { border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; margin-top: 1rem; }
 .code-header { background-color: #2a2a2a; color: #ccc; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; }
-#copy-btn.copied { background: var(--success-color); }
+#copy-btn.copied { background: var(--success-color); color: #1E1E1E; } /* Ensure text is readable on copied */
 pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var(--border-radius); font-family: 'Fira Code', monospace; font-size: 0.9em; max-height: 400px; }
+/* Prism Okaidia is already a dark theme, so it should work well.
+   If adjustments are needed, they would be here, targeting .token classes */
