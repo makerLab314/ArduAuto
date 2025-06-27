@@ -1,78 +1,40 @@
 /* Globale Stile und Variablen */
 :root {
     --primary-color: #4a90e2;
-    --secondary-color: #50e3c2;
-    --background-color: #f4f7f6;
-    --surface-color: #ffffff;
-    --text-color: #333;
-    --border-color: #e0e0e0;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --logic-color: #8e44ad; /* NEU für Logik-Blöcke */
+    --danger-color: #d0021b;
+    --warning-color: #f5a623;
+    --success-color: #2ecc71;
+    --background-color: #121212; /* Dark mode background */
+    --surface-color: #1E1E1E; /* Dark mode surface */
+    --text-color: #FFFFFF; /* Dark mode text */
+    --border-color: #333333; /* Dark mode border */
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.25); /* Adjusted shadow for dark mode */
     --border-radius: 8px;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
     background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    margin: 0;
-    padding: 2rem;
+    color: var(--text-color); /* Ensure body text is light */
+    margin: 0; padding: 2rem;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
+.container { max-width: 1300px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 2rem; font-family: 'Exo 2', sans-serif; }
+header h1 { color: var(--primary-color); font-family: 'Exo 2', sans-serif; }
+header h1 i { margin-right: 10px; font-family: 'Exo 2', sans-serif; }
+header p { color: var(--text-color); } /* Ensure header paragraph text is light */
 
-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+.main-layout { display: flex; gap: 2rem; align-items: flex-start; }
+#baustein-palette { flex: 1; background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); position: sticky; top: 2rem; }
+#programm-bereich-container { flex: 2; }
+h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin: 0 0 1rem 0; color: var(--text-color); } /* Ensure h2 text is light */
+.kategorie { margin-bottom: 1.5rem; }
+.kategorie h3 { font-size: 0.9em; color: #bbbbbb; margin-bottom: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; } /* Lighter color for category headers */
 
-header h1 {
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-/* Haupt-Layout mit Flexbox */
-.main-layout {
-    display: flex;
-    gap: 2rem;
-}
-
-#baustein-palette {
-    flex: 1;
-    background-color: var(--surface-color);
-    padding: 1.5rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-}
-
-#programm-bereich {
-    flex: 2;
-}
-
-h2 {
-    border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 0.5rem;
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-}
-
-.kategorie {
-    margin-bottom: 1.5rem;
-}
-
-.kategorie h3 {
-    font-size: 0.9em;
-    color: #777;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-/* Styling der Bausteine */
-.baustein {
+/* Bausteine in der Palette */
+#baustein-palette .baustein {
     background-color: var(--primary-color);
     color: white;
     padding: 10px 15px;
@@ -81,152 +43,133 @@ h2 {
     cursor: grab;
     font-family: 'Courier New', Courier, monospace;
     font-weight: bold;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     align-items: center;
-    justify-content: center;
     user-select: none;
 }
+#baustein-palette .baustein.stopp { background-color: var(--danger-color); }
+#baustein-palette .baustein.warten { background-color: var(--warning-color); }
+#baustein-palette .baustein.kommentar { background-color: #6c757d; justify-content: flex-start; gap: 10px; }
+#baustein-palette .baustein.if-else { background-color: var(--logic-color); } /* NEU */
+#baustein-palette .warten-input, #baustein-palette .kommentar textarea { pointer-events: none; }
 
-.baustein:active {
-    cursor: grabbing;
-    transform: scale(1.05);
-    box-shadow: 0 6px 10px rgba(0,0,0,0.15);
-}
-
-.baustein.stopp { background-color: #d0021b; }
-.baustein.warten { background-color: #f5a623; }
-
-.warten-input {
-    width: 50px;
-    margin: 0 5px;
-    border: 1px solid rgba(255,255,255,0.5);
-    background-color: rgba(255,255,255,0.2);
-    color: white;
-    border-radius: 4px;
-    text-align: center;
-    font-weight: bold;
-    outline: none;
-}
-.warten-input:focus {
-    background-color: white;
-    color: black;
-}
-
-/* Drag-Effekte */
-.dragging {
-    opacity: 0.5;
-}
-
-/* Programmbereich / Dropzone */
+/* Programm-Ablauf & Dropzone */
 #programm-ablauf {
     background-color: var(--surface-color);
     border: 2px dashed var(--border-color);
     border-radius: var(--border-radius);
     min-height: 400px;
     padding: 1rem;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: background-color 0.3s, border-color 0.3s;
 }
-
-#programm-ablauf.drag-over {
-    background-color: #eaf2fb;
-    border-color: var(--primary-color);
-}
-
-.platzhalter-text {
+#programm-ablauf:empty::before, .nested-dropzone:empty::before { /* Angepasst */
+    content: "Ziehe Bausteine hierher";
     display: flex;
+    min-height: 50px; /* Angepasst */
+    height: 100%;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    color: #aaa;
+    color: #5a76a5; /* Adjusted color for dark mode */
     font-style: italic;
-    pointer-events: none;
+    font-size: 0.9em;
 }
+#programm-ablauf:empty::before { min-height: 380px; content: "Ziehe Bausteine hierher oder lade ein Beispiel"; }
+#programm-ablauf.sortable-ghost { background: rgba(74, 144, 226, 0.05); } /* Adjusted for dark mode */
 
-/* Buttons */
-.action-buttons {
-    margin-top: 1.5rem;
+/* Einzelne Blöcke im Programm-Ablauf */
+.programm-block {
     display: flex;
-    gap: 1rem;
-}
-
-button {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 12px 20px;
+    align-items: center;
+    padding: 8px;
+    margin-bottom: 8px;
     border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Adjusted shadow for dark mode */
+    background: var(--surface-color); /* Use surface color for blocks */
+    color: var(--text-color); /* Ensure text in blocks is light */
+    position: relative;
+    overflow: hidden;
+}
+.programm-block .handle { cursor: grab; color: #888; margin-right: 10px; align-self: flex-start; padding-top: 4px; font-family: 'Exo 2', sans-serif; }
+.programm-block .content { flex-grow: 1; }
+.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; align-self: flex-start; padding-top: 2px; font-family: 'Exo 2', sans-serif; }
+.programm-block .actions button {
+    background: none; border: none; color: #aaa; cursor: pointer;
+    width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
+}
+.programm-block .actions button:hover { background: #333; color: #eee; } /* Darker hover for buttons */
+.programm-block .actions .delete-btn:hover { color: var(--danger-color); }
+
+/* Block-spezifische Stile */
+.programm-block[data-type^="vorwaerts"], .programm-block[data-type^="drehe"], .programm-block[data-type="rueckwaerts"] { border-left: 5px solid var(--primary-color); }
+.programm-block[data-type="stopp"] { border-left: 5px solid var(--danger-color); }
+.programm-block[data-type="warten"], .programm-block[data-type="fahre_bis_hindernis"] { border-left: 5px solid var(--warning-color); } /* Erweitert */
+.programm-block[data-type="kommentar"] { border-left: 5px solid #6c757d; }
+.programm-block[data-type="if_else_abstand"] { border-left: 5px solid var(--logic-color); flex-direction: column; align-items: stretch; overflow: visible; } /* NEU */
+
+/* Stile für den If/Else Block */
+.if-else-container { display: flex; flex-direction: column; width: 100%; }
+.if-else-header { display: flex; align-items: center; padding: 4px; background: #2c2c2c; border-radius: 4px; } /* Darker background for if-else header */
+.if-else-header code { background-color: rgba(142, 68, 173, 0.2); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; } /* Adjusted for dark mode */
+.if-branch, .else-branch { margin-left: 20px; margin-top: 8px; }
+.branch-header { font-weight: bold; font-family: 'Courier New', monospace; font-size: 0.9em; padding: 4px; }
+.if-branch .branch-header { color: var(--logic-color); }
+.else-branch .branch-header { color: #999999; } /* Lighter color for else branch header */
+.nested-dropzone {
+    min-height: 60px;
+    background: #252525; /* Darker background for nested dropzone */
+    border: 1px dashed #444444; /* Darker border for nested dropzone */
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 4px;
+}
+.nested-dropzone:empty::before { color: #5a76a5; } /* Ensure placeholder text is visible */
+
+
+/* Stile für Inputs */
+.programm-block .warten-input {
+    width: 60px; border: 1px solid #555; border-radius: 6px; text-align: center;
+    padding: 4px; font-family: 'Courier New', monospace;
+    background-color: #333; color: var(--text-color); /* Dark mode for inputs */
+}
+.programm-block .warten-input.invalid { border-color: var(--danger-color); background: #402020; outline-color: var(--danger-color); } /* Darker invalid input */
+.programm-block .kommentar-textarea {
+    width: 100%; border: 1px solid #555; border-radius: 6px; padding: 4px;
+    font-family: 'Exo 2', sans-serif;  resize: vertical; min-height: 25px;
+    background-color: #333; color: var(--text-color); /* Dark mode for textarea */
 }
 
-button:hover {
-    background-color: #357abd;
-}
+/* UI-Elemente */
+.programm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.top-actions { display: flex; gap: 0.5rem; }
+.top-actions button, .dropdown-btn { font-size: 0.9em; padding: 8px 12px; }
+button { background: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+button:hover:not(:disabled) { filter: brightness(1.2); } /* Adjusted brightness for dark mode */
+button:active:not(:disabled) { transform: scale(0.98); }
+button:disabled { background: #555; color: #aaa; cursor: not-allowed; } /* Darker disabled button */
+button.danger-btn { background-color: #c0392b; } /* Slightly adjusted danger color */
 
-button:active {
-    transform: scale(0.98);
-}
+/* Dropdown */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-content { display: none; position: absolute; background-color: var(--surface-color); min-width: 160px; box-shadow: var(--shadow); z-index: 1; border-radius: 5px; overflow: hidden; right: 0; border: 1px solid var(--border-color); }
+.dropdown-content a { color: var(--text-color); padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9em; }
+.dropdown-content a:hover { background-color: #333333; } /* Darker hover for dropdown items */
+.dropdown:hover .dropdown-content { display: block; }
 
-#clear-btn {
-    background-color: #777;
-}
-#clear-btn:hover {
-    background-color: #666;
-}
+/* Toast-Benachrichtigungen */
+#toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; }
+.toast { background: #444; color: white; padding: 15px 20px; border-radius: 5px; margin-bottom: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards; }
+.toast.success { background: var(--success-color); color: #1E1E1E; } /* Ensure text is readable on success */
+.toast.error { background: var(--danger-color); color: white; }
+@keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
 
-
-/* --- NEUER, VERBESSERTER CODE-AUSGABE-BEREICH --- */
-#code-output-bereich {
-    margin-top: 2rem;
-}
-
-.code-container {
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    overflow: hidden; /* Stellt sicher, dass die Ecken des pre-Tags nicht überstehen */
-}
-
-.code-header {
-    background-color: #2a2a2a; /* Etwas heller als der Code-Hintergrund */
-    color: #ccc;
-    padding: 8px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9em;
-}
-
-#copy-btn {
-    background-color: #555;
-    padding: 5px 10px;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-#copy-btn:hover {
-    background-color: #666;
-}
-
-#copy-btn.copied {
-    background-color: var(--secondary-color);
-    color: #333;
-}
-
-/* Anpassungen für Prism.js Theme */
-pre[class*="language-"] {
-    margin: 0; /* Entfernt den Standard-Margin von Prism */
-    border-radius: 0 0 var(--border-radius) var(--border-radius); /* Passt die Ecken an den Container an */
-    font-family: 'Fira Code', 'Courier New', monospace; /* Verwendet die bessere Code-Schriftart */
-    font-size: 0.9em;
-    max-height: 400px;
-}
-
-/* Wichtig: Sorgt dafür, dass Zeilenumbrüche im Code-Block korrekt funktionieren */
-.token.comment, .token.prolog, .token.doctype, .token.cdata {
-    white-space: pre-wrap !important;
-}
+/* Code-Output */
+#code-output-bereich { margin-top: 2rem; }
+.code-header-container { display: flex; justify-content: space-between; align-items: center; } /* NEU */
+#loop-toggle-container { display: flex; align-items: center; gap: 15px; font-size: 0.9em; color: var(--text-color); } /* NEU, ensure text is light */
+#loop-toggle-container label { display: flex; align-items: center; gap: 5px; cursor: pointer; } /* NEU */
+.code-container { border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; margin-top: 1rem; }
+.code-header { background-color: #2a2a2a; color: #ccc; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; }
+#copy-btn.copied { background: var(--success-color); color: #1E1E1E; } /* Ensure text is readable on copied */
+pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var(--border-radius); font-family: 'Fira Code', monospace; font-size: 0.9em; max-height: 400px; }
+/* Prism Okaidia is already a dark theme, so it should work well.
+   If adjustments are needed, they would be here, targeting .token classes */
