@@ -230,3 +230,44 @@ pre[class*="language-"] {
 .token.comment, .token.prolog, .token.doctype, .token.cdata {
     white-space: pre-wrap !important;
 }
+
+/* Bausteine in der Palette */
+#baustein-palette .baustein { background-color: var(--primary-color); color: white; padding: 10px 15px; margin-bottom: 10px; border-radius: 5px; cursor: grab; font-family: 'Courier New', Courier, monospace; font-weight: bold; display: flex; align-items: center; user-select: none; }
+#baustein-palette .baustein.stopp { background-color: var(--danger-color); }
+#baustein-palette .baustein.warten { background-color: var(--warning-color); }
+#baustein-palette .baustein.kommentar { background-color: #6c757d; }
+#baustein-palette .baustein.logic { background-color: var(--logic-color); } /* NEU */
+#baustein-palette .baustein input, #baustein-palette .baustein textarea, #baustein-palette .baustein select { pointer-events: none; }
+#baustein-palette .baustein input[type="text"] { width: 40px; }
+
+/* Programm-Ablauf & Dropzone */
+#programm-ablauf, .nested-dropzone { background-color: var(--surface-color); border: 2px dashed var(--border-color); border-radius: var(--border-radius); min-height: 50px; padding: 1rem; transition: background-color 0.3s, border-color 0.3s; }
+#programm-ablauf:empty::before { content: "Ziehe Bausteine hierher"; display: flex; min-height: 380px; align-items: center; justify-content: center; color: #aaa; font-style: italic; }
+.sortable-ghost { background: rgba(74, 144, 226, 0.1); border-radius: 5px; }
+
+/* Einzelne Blöcke im Programm-Ablauf */
+.programm-block { display: flex; flex-direction: column; /* Wichtig für Verschachtelung */ margin-bottom: 8px; background: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); overflow: hidden; }
+.block-header { display: flex; align-items: center; padding: 8px; width: 100%; }
+.programm-block .handle { cursor: grab; color: #ccc; margin-right: 10px; }
+.programm-block .content { flex-grow: 1; }
+.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; }
+.programm-block .actions button { background: none; border: none; color: #aaa; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; }
+.programm-block .actions button:hover { background: #f0f0f0; color: #333; }
+.programm-block .actions .delete-btn:hover { color: var(--danger-color); }
+
+/* Block-spezifische Stile */
+.block-header { border-left: 5px solid var(--primary-color); }
+.programm-block[data-type="stopp"] .block-header { border-left-color: var(--danger-color); }
+.programm-block[data-type="warten"] .block-header { border-left-color: var(--warning-color); }
+.programm-block[data-type="kommentar"] .block-header { border-left-color: #6c757d; }
+.programm-block[data-type="if_abstand"] .block-header, 
+.programm-block[data-type="fahre_bis_hindernis"] .block-header { border-left-color: var(--logic-color); } /* NEU */
+
+/* --- STILE FÜR CONTAINER-BLÖCKE (IF) --- */
+.nested-dropzone { min-height: 60px; background: #f9f9f9; margin: 0 8px 8px 30px; border-style: solid; }
+.nested-dropzone:empty::before { content: "Blöcke hier ablegen"; color: #ccc; font-size: 0.9em; display: flex; align-items: center; justify-content: center; min-height: 40px; }
+
+.programm-block .content input[type="text"] { width: 50px; border: 1px solid #ccc; border-radius: 4px; text-align: center; padding: 4px; font-family: 'Courier New', monospace; }
+.programm-block .content select { border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-family: 'Roboto', sans-serif; }
+.programm-block .content input.invalid { border-color: var(--danger-color); background: #fff0f0; }
+.programm-block .kommentar-textarea { width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-family: 'Roboto', sans-serif; resize: vertical; min-height: 25px; }
