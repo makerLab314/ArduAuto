@@ -1,29 +1,41 @@
 // Definition der Beispiel-Programme mit neuer verschachtelter Struktur
 const EXAMPLES = {
     autonom: [
-        { type: 'fahre_bis_hindernis', value: '15', children: [] },
-        { type: 'stopp', value: null, children: [] },
-        { type: 'drehe_links', value: null, children: [] },
-        { type: 'warten', value: '1', children: [] },
-        { type: 'kommentar', value: 'Jetzt prüfen, ob rechts frei ist', children: [] },
-        { type: 'drehe_rechts', value: null, children: [] },
-        { type: 'warten', value: '1', children: [] },
+        { id: "b1", type: 'kommentar', value: 'Fahre, bis ein Hindernis 15cm entfernt ist', children: [] },
+        { id: "b2", type: 'fahre_bis_hindernis', value: '15', children: [] },
+        { id: "b3", type: 'stopp', value: null, children: [] },
+        { id: "b4", type: 'warten', value: '0.5', children: [] },
         { 
-            type: 'if_abstand', 
-            value: { operator: '>', value: '30'}, 
+            id: "b5", type: 'if_abstand', 
+            value: { operator: '<', value: '20'}, 
             children: [
-                { type: 'kommentar', value: 'Weg ist frei, weiterfahren', children: [] },
-                { type: 'vorwaerts_schnell', value: null, children: [] },
-                { type: 'warten', value: '2', children: [] },
+                { id: "b6", type: 'kommentar', value: 'Hindernis ist nah, drehe um', children: [] },
+                { id: "b7", type: 'drehe_links', value: null, children: [] },
+                { id: "b8", type: 'warten', value: '1', children: [] },
+                { id: "b9", type: 'stopp', value: null, children: [] },
             ] 
         }
     ],
-    //... (andere Beispiele bleiben flach)
+    quadrat: [
+        { id: "q1", type: 'vorwaerts_schnell', value: null, children: [] }, { id: "q2", type: 'warten', value: '1.5', children: [] },
+        { id: "q3", type: 'drehe_rechts', value: null, children: [] }, { id: "q4", type: 'warten', value: '0.8', children: [] },
+        { id: "q5", type: 'vorwaerts_schnell', value: null, children: [] }, { id: "q6", type: 'warten', value: '1.5', children: [] },
+        { id: "q7", type: 'drehe_rechts', value: null, children: [] }, { id: "q8", type: 'warten', value: '0.8', children: [] },
+        { id: "q9", type: 'vorwaerts_schnell', value: null, children: [] }, { id: "q10", type: 'warten', value: '1.5', children: [] },
+        { id: "q11", type: 'drehe_rechts', value: null, children: [] }, { id: "q12", type: 'warten', value: '0.8', children: [] },
+        { id: "q13", type: 'vorwaerts_schnell', value: null, children: [] }, { id: "q14", type: 'warten', value: '1.5', children: [] },
+        { id: "q15", type: 'stopp', value: null, children: [] }
+    ],
+    pendel: [
+        { id: "p1", type: 'vorwaerts_langsam', value: null, children: [] }, { id: "p2", type: 'warten', value: '2', children: [] },
+        { id: "p3", type: 'rueckwaerts', value: null, children: [] }, { id: "p4", type: 'warten', value: '2', children: [] },
+        { id: "p5", type: 'stopp', value: null, children: [] }
+    ]
 };
 
 const RoboProgrammer = {
     els: {},
-    state: [], // Wird jetzt zu einer Baumstruktur
+    state: [], // Das Programm als Baumstruktur
     history: [],
     historyIndex: -1,
 
@@ -37,7 +49,18 @@ const RoboProgrammer = {
     },
 
     cacheDOMElements() {
-        // ... (unverändert zu V3.3)
+        this.els = {
+            kategorien: document.querySelectorAll('#baustein-palette .kategorie'),
+            dropzone: document.getElementById('programm-ablauf'),
+            undoBtn: document.getElementById('undo-btn'),
+            redoBtn: document.getElementById('redo-btn'),
+            clearBtn: document.getElementById('clear-btn'),
+            saveBtn: document.getElementById('save-btn'),
+            loadBtn: document.getElementById('load-btn'),
+            copyBtn: document.getElementById('copy-btn'),
+            codeOutput: document.getElementById('code-output'),
+            exampleLinks: document.querySelectorAll('.dropdown-content a')
+        };
     },
     
     initSortable() {
@@ -52,7 +75,6 @@ const RoboProgrammer = {
         this.initDropzone(this.els.dropzone);
     },
 
-    /** Initialisiert SortableJS für eine gegebene Dropzone (auch für verschachtelte) */
     initDropzone(dropzoneElement) {
         new Sortable(dropzoneElement, {
             group: 'shared',
@@ -63,11 +85,36 @@ const RoboProgrammer = {
         });
     },
 
-    addEventListeners() { /* ... unverändert zu V3.3 ... */ },
+    addEventListeners() {
+        this.els.undoBtn.addEventListener('click', () => this.undo());
+        this.els.redoBtn.addEventListener('click', () => this.redo());
+        this.els.clearBtn.addEventListener('click', () => this.clearProgram());
+        this.els.saveBtn.addEventListener('click', () => this.saveToLocalStorage());
+        this.els.loadBtn.addEventListener('click', () => this.loadFromLocalStorage(true));
+        this.els.copyBtn.addEventListener('click', () => this.copyCode());
+        
+        this.els.exampleLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.loadExample(e.target.dataset.example);
+            });
+        });
 
-    // --- Zustands- & History-Management (rekursive Helfer) ---
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                if (e.key === 'z') { e.preventDefault(); this.undo(); }
+                if (e.key === 'y') { e.preventDefault(); this.redo(); }
+            }
+        });
+    },
+
+    // --- Zustands- & History-Management ---
     
-    saveToHistory() { /* ... unverändert zu V3.3 ... */ },
+    saveToHistory() {
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        this.history.push(JSON.parse(JSON.stringify(this.state)));
+        this.historyIndex++;
+    },
     
     updateUI() {
         this.renderBlocks();
@@ -78,18 +125,17 @@ const RoboProgrammer = {
     renderBlocks() {
         this.els.dropzone.innerHTML = '';
         this.recursiveRender(this.state, this.els.dropzone);
-        // Nach dem Rendern alle (auch die neuen) verschachtelten Dropzones initialisieren
         this.els.dropzone.querySelectorAll('.nested-dropzone').forEach(nestedEl => {
             this.initDropzone(nestedEl);
         });
     },
 
-    /** Rendert Blöcke rekursiv in ihre Elternelemente */
     recursiveRender(blocks, parentElement) {
-        blocks.forEach((blockData, index) => {
+        blocks.forEach((blockData) => {
             const blockEl = this.createBlockElement(blockData);
             parentElement.appendChild(blockEl);
-            if (blockData.children && blockData.children.length > 0) {
+            // Wenn der Block Kinder hat UND ein Container-Block ist, rendere die Kinder rekursiv
+            if (blockData.children && blockData.children.length >= 0 && blockData.type === 'if_abstand') {
                 const nestedDropzone = blockEl.querySelector('.nested-dropzone');
                 if (nestedDropzone) {
                     this.recursiveRender(blockData.children, nestedDropzone);
@@ -98,19 +144,35 @@ const RoboProgrammer = {
         });
     },
 
-    undo() { /* ... unverändert zu V3.3 ... */ },
-    redo() { /* ... unverändert zu V3.3 ... */ },
-    updateUndoRedoButtons() { /* ... unverändert zu V3.3 ... */ },
+    undo() {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.updateUI();
+        }
+    },
 
-    // --- Block-Manipulation (stark überarbeitet für Baumstruktur) ---
+    redo() {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            this.state = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.updateUI();
+        }
+    },
+    
+    updateUndoRedoButtons() {
+        this.els.undoBtn.disabled = this.historyIndex <= 0;
+        this.els.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+    },
 
-    /** Findet einen Block und seine Elter-Liste anhand der ID */
-    findBlockAndParent(id, blocks = this.state, parent = null) {
+    // --- Block-Manipulation mit Baumstruktur ---
+
+    findBlockAndParent(id, blocks = this.state) {
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
             if (block.id === id) return { block, parentList: blocks, index: i };
             if (block.children) {
-                const found = this.findBlockAndParent(id, block.children, block);
+                const found = this.findBlockAndParent(id, block.children);
                 if (found) return found;
             }
         }
@@ -148,11 +210,9 @@ const RoboProgrammer = {
         const fromParentId = evt.from.dataset.parentId;
         const toParentId = evt.to.dataset.parentId;
 
-        // 1. Block aus alter Position entfernen
         let fromList = fromParentId ? this.findBlockAndParent(fromParentId).block.children : this.state;
         const [movedBlock] = fromList.splice(evt.oldIndex, 1);
 
-        // 2. Block an neuer Position einfügen
         let toList = toParentId ? this.findBlockAndParent(toParentId).block.children : this.state;
         toList.splice(evt.newIndex, 0, movedBlock);
         
@@ -173,7 +233,6 @@ const RoboProgrammer = {
         const found = this.findBlockAndParent(id);
         if (found) {
             const newBlock = JSON.parse(JSON.stringify(found.block));
-            // Rekursiv neue IDs für alle Kinder vergeben
             const assignNewIds = (b) => {
                 b.id = `block_${Date.now()}_${Math.random()}`;
                 if (b.children) b.children.forEach(assignNewIds);
@@ -190,7 +249,7 @@ const RoboProgrammer = {
         if (found) {
             found.block.value = newValue;
             this.saveToHistory();
-            this.generateCode(); // Schnelleres Update, nur Code neu generieren
+            this.generateCode();
         }
     },
 
@@ -200,19 +259,26 @@ const RoboProgrammer = {
         el.dataset.type = block.type;
         el.dataset.id = block.id;
 
-        let contentHTML;
-        if (block.type === 'if_abstand') {
-            const op = block.value.operator;
-            contentHTML = `if (Abstand 
-                <select class="if-operator">
-                    <option value="<" ${op === '<' ? 'selected' : ''}><</option>
-                    <option value=">" ${op === '>' ? 'selected' : ''}>></option>
-                </select> 
-                <input type="text" class="value-input" value="${block.value.value}">)`;
-        } else if (block.type === 'fahre_bis_hindernis' || block.type === 'warten') {
-            contentHTML = `${block.type}(<input type="text" class="value-input" value="${block.value || ''}">)`;
-        } else {
-            // ... (wie gehabt für andere Blöcke)
+        let contentHTML = '';
+        switch(block.type) {
+            case 'if_abstand':
+                const op = block.value.operator;
+                contentHTML = `if (Abstand 
+                    <select class="if-operator">
+                        <option value="<" ${op === '<' ? 'selected' : ''}><</option>
+                        <option value=">" ${op === '>' ? 'selected' : ''}>></option>
+                    </select> 
+                    <input type="text" class="value-input" value="${block.value.value}">)`;
+                break;
+            case 'fahre_bis_hindernis':
+            case 'warten':
+                contentHTML = `${block.type}(<input type="text" class="value-input" value="${block.value || ''}">)`;
+                break;
+            case 'kommentar':
+                 contentHTML = `<textarea class="kommentar-textarea" placeholder="Dein Kommentar...">${block.value || ''}</textarea>`;
+                 break;
+            default:
+                contentHTML = `${block.type}();`;
         }
 
         el.innerHTML = `<div class="block-header">
@@ -234,7 +300,7 @@ const RoboProgrammer = {
         el.querySelector('.delete-btn').addEventListener('click', () => this.deleteBlock(block.id));
         el.querySelector('.duplicate-btn').addEventListener('click', () => this.duplicateBlock(block.id));
         
-        el.querySelectorAll('.value-input, .if-operator').forEach(input => {
+        el.querySelectorAll('.value-input, .if-operator, .kommentar-textarea').forEach(input => {
             input.addEventListener('change', () => {
                 let newValue;
                 if (block.type === 'if_abstand') {
@@ -243,7 +309,7 @@ const RoboProgrammer = {
                         value: el.querySelector('.value-input').value
                     };
                 } else {
-                    newValue = el.querySelector('.value-input').value;
+                    newValue = input.value;
                 }
                 this.updateBlockValue(block.id, newValue);
             });
@@ -253,16 +319,42 @@ const RoboProgrammer = {
     },
 
     // --- Programm-Aktionen ---
-    clearProgram() { /* ... unverändert zu V3.3 ... */ },
-    loadExample(key) { /* ... unverändert zu V3.3 ... */ },
-    saveToLocalStorage() { /* ... unverändert zu V3.3, nutzt 'roboterProgramm_v4.0' ... */ },
-    loadFromLocalStorage() { /* ... unverändert zu V3.3, nutzt 'roboterProgramm_v4.0' ... */ },
+    clearProgram() {
+        if (this.state.length > 0 && confirm("Möchtest du das gesamte Programm wirklich unwiderruflich löschen?")) {
+            this.state = [];
+            this.saveToHistory();
+            this.updateUI();
+        }
+    },
+    loadExample(key) {
+        if (this.state.length > 0 && !confirm("Dein aktuelles Programm wird durch das Beispiel ersetzt. Fortfahren?")) return;
+        this.state = JSON.parse(JSON.stringify(EXAMPLES[key]));
+        this.saveToHistory();
+        this.updateUI();
+        this.showToast(`Beispiel "${key}" geladen.`, 'success');
+    },
+    saveToLocalStorage() {
+        localStorage.setItem('roboterProgramm_v4.0', JSON.stringify(this.state));
+        this.showToast('Programm im Browser gespeichert!', 'success');
+    },
+    loadFromLocalStorage(fromButtonClick = false) {
+        const saved = localStorage.getItem('roboterProgramm_v4.0');
+        if (saved) {
+            const savedState = JSON.parse(saved);
+            if (fromButtonClick && this.state.length > 0 && !confirm("Gespeichertes Programm laden? Alle aktuellen Änderungen gehen verloren.")) return;
+            this.state = savedState;
+            this.saveToHistory();
+            this.updateUI();
+            if(fromButtonClick) this.showToast('Programm aus Speicher geladen.', 'success');
+        } else if (fromButtonClick) {
+            this.showToast('Kein gespeichertes Programm gefunden.', 'error');
+        }
+    },
     
-    // --- Code-Generierung (jetzt rekursiv!) ---
-
+    // --- Code-Generierung (rekursiv) ---
     generateCode() {
         const code = this.recursiveGenerateCode(this.state, '  ');
-        const finalCode = `#include "fahrfunktionen.h"\n\nvoid setup() {\n  Serial.begin(9600);\n  Serial.println("Roboter-Auto startklar.");\n\n${code}\n  Serial.println("Programm beendet.");\n}\n\nvoid loop() {\n  // Bleibt leer\n}`;
+        const finalCode = `#include "fahrfunktionen.h"\n\nvoid setup() {\n  Serial.begin(9600);\n  Serial.println("Roboter-Auto startklar.");\n\n${code || '// Programm ist leer.'}\n\n  Serial.println("Programm beendet.");\n}\n\nvoid loop() {\n  // Bleibt leer\n}`;
         this.els.codeOutput.textContent = finalCode;
         Prism.highlightElement(this.els.codeOutput);
     },
@@ -270,18 +362,18 @@ const RoboProgrammer = {
     recursiveGenerateCode(blocks, indent) {
         return blocks.map(block => {
             let line = indent;
+            const value = block.value;
             switch(block.type) {
                 case 'if_abstand':
-                    const condition = `if (messe_abstand_cm() ${block.value.operator} ${block.value.value}) {`;
+                    const condition = `if (messe_abstand_cm() ${value.operator} ${value.value}) {`;
                     const childrenCode = this.recursiveGenerateCode(block.children, indent + '  ');
                     return `${line}${condition}\n${childrenCode}\n${line}}`;
                 case 'fahre_bis_hindernis':
                 case 'warten':
-                    line += `${block.type}(${block.value});`;
+                    line += `${block.type}(${value});`;
                     break;
                 case 'kommentar':
-                    line += `// ${block.value || ''}`;
-                    break;
+                    return (value || '').split('\n').map(l => `${indent}// ${l}`).join('\n');
                 default:
                     line += `${block.type}();`;
             }
@@ -289,8 +381,20 @@ const RoboProgrammer = {
         }).join('\n');
     },
 
-    copyCode() { /* ... unverändert zu V3.3 ... */ },
-    showToast() { /* ... unverändert zu V3.3 ... */ },
+    copyCode() {
+        navigator.clipboard.writeText(this.els.codeOutput.textContent).then(() => {
+            this.showToast('Code in die Zwischenablage kopiert!', 'success');
+        });
+    },
+
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => RoboProgrammer.init());
