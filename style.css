@@ -174,6 +174,66 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
 /* Prism Okaidia is already a dark theme, so it should work well.
    If adjustments are needed, they would be here, targeting .token classes */
 
+/* Circular Time Slider Styles - New SVG Morphing Approach */
+.time-slider-popup {
+    position: fixed;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    box-shadow: var(--shadow);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    user-select: none;
+    backdrop-filter: blur(18px) saturate(120%);
+    background-color: rgba(40, 40, 40, 0.65);
+    border: 1px solid var(--border-color);
+}
+
+.time-slider-svg-morphing {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: visible;
+}
+
+.track-ring-path {
+    fill: #5a8cd8; /* Track color from previous confirmed style */
+}
+
+.thumb-dent-path {
+    fill: var(--primary-color);
+    fill-opacity: 0.9;
+    stroke: rgba(255, 255, 255, 0.7);
+    stroke-width: 1px;
+    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)) drop-shadow(0px 0px 1.5px rgba(0,0,0,0.15));
+    cursor: grab;
+}
+
+.time-slider-center-text {
+    font-family: 'Fira Code', monospace; font-size: 1.5em;
+    color: var(--text-color); text-align: center;
+    position: relative;
+    z-index: 4;
+}
+.time-slider-center-text span { display: block; font-size: 0.6em; color: #aaa; }
+
+.time-slider-marker {
+    position: absolute;
+    z-index: 2;
+}
+.time-slider-marker .marker-line {
+    display: block; width: 100%; height: 100%;
+    background-color: var(--text-color);
+    transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1.0);
+    transform-origin: center bottom;
+}
+.time-slider-marker.bumping .marker-line {
+    transform: scaleY(1.5) translateY(-2px);
+}
+.time-slider-marker.zero { /* JS sets width/height of parent marker div */ }
+.time-slider-marker.half-second { /* JS sets width/height of parent marker div */ }
+
 /* Circular Time Slider Styles */
 .time-slider-popup {
     position: fixed; /* Use fixed to position relative to viewport, or absolute for relative to a positioned ancestor */
@@ -189,8 +249,6 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
     justify-content: center;
     z-index: 1001; /* Above other elements */
     user-select: none; /* Prevent text selection during drag */
-    backdrop-filter: blur(15px); /* Increased blur radius */
-    background-color: rgba(30, 30, 30, 0.75); /* Semi-transparent background for blur */
 }
 
 .time-slider-track {
@@ -200,36 +258,17 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
     border-radius: 50%;
     border: 10px solid #69a0e8; /* Lighter shade of --primary-color (was --primary-color-light) */
     box-sizing: border-box;
-    /* Ensure markers are drawn on top of the track border but below the thumb */
 }
-
-.time-slider-marker {
-    position: absolute;
-    background-color: var(--text-color); /* Or a specific marker color */
-    transform-origin: 0 50%; /* Rotate around the edge connected to the center */
-    z-index: 1; /* Below thumb (thumb is implicitly higher or set explicitly) */
-}
-
-.time-slider-marker.zero {
-    height: 15px; /* Larger marker for zero */
-    width: 3px;
-}
-
-.time-slider-marker.half-second {
-    height: 8px; /* Smaller marker for 0.5s intervals */
-    width: 1px;
-}
-
 
 .time-slider-thumb {
     position: absolute;
-    width: 30px; /* Increased size */
-    height: 30px; /* Increased size */
+    width: 20px;
+    height: 20px;
     background-color: var(--primary-color);
     border-radius: 50%;
     transform-origin: 50% 50%;
     cursor: pointer;
-    border: 3px solid white; /* Adjusted border for new size */
+    border: 2px solid white;
     box-sizing: border-box;
     /* Thumb will be positioned by JavaScript based on the center of the slider */
 }
