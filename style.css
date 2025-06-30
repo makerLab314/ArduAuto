@@ -1,7 +1,7 @@
 /* Globale Stile und Variablen */
 :root {
-    --primary-color: #4a90e2; /* Unchanged */
-    --logic-color: #8e44ad;
+    --primary-color: #4a90e2;
+    --logic-color: #8e44ad; /* NEU für Logik-Blöcke */
     --danger-color: #d0021b;
     --warning-color: #f5a623;
     --success-color: #2ecc71;
@@ -55,64 +55,26 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
 
 /* Programm-Ablauf & Dropzone */
 #programm-ablauf {
-    background-color: var(--surface-color); /* Fallback if image fails */
+    background-color: var(--surface-color);
     border: 2px dashed var(--border-color);
     border-radius: var(--border-radius);
     min-height: 400px;
     padding: 1rem;
     transition: background-color 0.3s, border-color 0.3s;
-    /* Wave background image */
-    background-image: url('https://9to5mac.com/wp-content/uploads/sites/6/2025/06/macOS_26_Dark.jpg?quality=82&strip=all&w=1024');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative; /* For overlay */
 }
-
-/* Overlay for readability over background image */
-#programm-ablauf::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0, 0, 0, 0.3); /* Dark overlay */
-    border-radius: var(--border-radius);
-    z-index: 0;
-}
-
-/* Ensure direct children (blocks and empty placeholder) are above the overlay */
-#programm-ablauf > *, #programm-ablauf:empty::after {
-    position: relative;
-    z-index: 1;
-}
-
-/* Placeholder for main dropzone */
-#programm-ablauf:empty::after {
-    content: "Ziehe Bausteine hierher oder lade ein Beispiel"; /* Specific message */
+#programm-ablauf:empty::before, .nested-dropzone:empty::before { /* Angepasst */
+    content: "Ziehe Bausteine hierher";
     display: flex;
-    min-height: 380px; /* Specific height */
+    min-height: 50px; /* Angepasst */
     height: 100%;
     align-items: center;
     justify-content: center;
-    color: #5a76a5;
+    color: #5a76a5; /* Adjusted color for dark mode */
     font-style: italic;
     font-size: 0.9em;
 }
-
-/* Placeholder for nested dropzones in if/else */
-.nested-dropzone:empty::before {
-    content: "Ziehe Bausteine hierher"; /* Generic message */
-    display: flex;
-    min-height: 50px;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    color: #5a76a5;
-    font-style: italic;
-    font-size: 0.9em;
-}
-/* This selector was from original file, but ::before is now used by overlay, ::after is placeholder */
-/* #programm-ablauf:empty::before { min-height: 380px; content: "Ziehe Bausteine hierher oder lade ein Beispiel"; } */
-#programm-ablauf.sortable-ghost { background: rgba(74, 144, 226, 0.05); }
+#programm-ablauf:empty::before { min-height: 380px; content: "Ziehe Bausteine hierher oder lade ein Beispiel"; }
+#programm-ablauf.sortable-ghost { background: rgba(74, 144, 226, 0.05); } /* Adjusted for dark mode */
 
 /* Einzelne Blöcke im Programm-Ablauf */
 .programm-block {
@@ -215,9 +177,8 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
 /* Circular Time Slider Styles - New SVG Morphing Approach */
 .time-slider-popup {
     position: fixed;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%; /* Remains circular */
+    width: 200px; height: 200px;
+    border-radius: 50%;
     box-shadow: var(--shadow);
     display: none;
     align-items: center;
@@ -229,55 +190,40 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
     border: 1px solid var(--border-color);
 }
 
-.time-slider-svg-morphing { /* The main SVG container */
+.time-slider-svg-morphing {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     overflow: visible;
 }
 
-.track-ring-path { /* The main track ring (with a gap) */
-    fill: #5a8cd8; /* Color of the track ring, matches old border color */
-    /* stroke: none; */ /* No stroke if it's a filled shape */
+.track-ring-path {
+    fill: #5a8cd8; /* Track color from previous confirmed style */
 }
 
-.thumb-dent-path { /* The path for the thumb or dent */
+.thumb-dent-path {
     fill: var(--primary-color);
-    fill-opacity: 0.9; /* Slightly more opaque for thumb */
-    stroke: rgba(255, 255, 255, 0.7); /* Softer white stroke, slightly more transparent */
+    fill-opacity: 0.9;
+    stroke: rgba(255, 255, 255, 0.7);
     stroke-width: 1px;
-    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)) drop-shadow(0px 0px 1.5px rgba(0,0,0,0.15)); /* Diffuser shadow */
-    cursor: grab; /* Make this path the grabbable element */
+    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)) drop-shadow(0px 0px 1.5px rgba(0,0,0,0.15));
+    cursor: grab;
 }
 
 .time-slider-center-text {
-    font-family: 'Fira Code', monospace;
-    font-size: 1.5em;
-    color: var(--text-color);
-    text-align: center;
+    font-family: 'Fira Code', monospace; font-size: 1.5em;
+    color: var(--text-color); text-align: center;
     position: relative;
-    z-index: 4; /* Highest, above SVG paths */
+    z-index: 4;
 }
+.time-slider-center-text span { display: block; font-size: 0.6em; color: #aaa; }
 
-.time-slider-center-text span {
-    display: block;
-    font-size: 0.6em;
-    color: #aaa;
-}
-
-/* Static Tick-Markers (Divs) - styling remains similar */
 .time-slider-marker {
     position: absolute;
-    background-color: var(--text-color);
-    z-index: 2; /* Above track ring, potentially below thumb/dent path depending on SVG paint order */
-                /* Or make thumb-dent-path z-index higher if it's separate element */
+    z-index: 2;
 }
-.time-slider-marker .marker-line { /* If using nested span for animation */
-    display: block;
-    width: 100%;
-    height: 100%;
+.time-slider-marker .marker-line {
+    display: block; width: 100%; height: 100%;
     background-color: var(--text-color);
     transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1.0);
     transform-origin: center bottom;
@@ -285,6 +231,57 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
 .time-slider-marker.bumping .marker-line {
     transform: scaleY(1.5) translateY(-2px);
 }
-
 .time-slider-marker.zero { /* JS sets width/height of parent marker div */ }
 .time-slider-marker.half-second { /* JS sets width/height of parent marker div */ }
+
+/* Circular Time Slider Styles */
+.time-slider-popup {
+    position: fixed; /* Use fixed to position relative to viewport, or absolute for relative to a positioned ancestor */
+    width: 200px;
+    height: 200px;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    box-shadow: var(--shadow);
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001; /* Above other elements */
+    user-select: none; /* Prevent text selection during drag */
+}
+
+.time-slider-track {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 10px solid #69a0e8; /* Lighter shade of --primary-color (was --primary-color-light) */
+    box-sizing: border-box;
+}
+
+.time-slider-thumb {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    transform-origin: 50% 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-sizing: border-box;
+    /* Thumb will be positioned by JavaScript based on the center of the slider */
+}
+
+.time-slider-center-text {
+    font-family: 'Fira Code', monospace;
+    font-size: 1.5em;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.time-slider-center-text span {
+    display: block;
+    font-size: 0.6em;
+    color: #aaa;
+}
