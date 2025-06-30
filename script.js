@@ -485,7 +485,9 @@ ${loopCode}
             this.timeSliderElement = document.createElement('div');
             this.timeSliderElement.className = 'time-slider-popup';
             this.timeSliderElement.innerHTML = `
-                <div class="time-slider-track"></div>
+                <div class="time-slider-track">
+                    <!-- Markers will be added here by JS -->
+                </div>
                 <div class="time-slider-thumb"></div>
                 <div class="time-slider-center-text">
                     0.00 <span>seconds</span>
@@ -494,6 +496,115 @@ ${loopCode}
             document.body.appendChild(this.timeSliderElement);
             this.timeSliderThumb = this.timeSliderElement.querySelector('.time-slider-thumb');
             this.timeSliderText = this.timeSliderElement.querySelector('.time-slider-center-text');
+            const trackElement = this.timeSliderElement.querySelector('.time-slider-track');
+
+            // Add markers
+            const maxValue = 60; // Max seconds for one full circle
+            const trackRadius = 90; // Outer radius of the track div (180px / 2)
+            const trackBorderWidth = 10; // As defined in CSS for .time-slider-track border
+            // Effective radius for marker placement (center of the visible track border)
+            const markerPlacementRadius = trackRadius - (trackBorderWidth / 2);
+
+            for (let s = 0; s < maxValue; s += 0.5) {
+                const marker = document.createElement('div');
+                const isZeroMark = (s === 0);
+                marker.className = 'time-slider-marker ' + (isZeroMark ? 'zero' : 'half-second');
+
+                const angleDeg = (s / maxValue * 360) - 90; // -90 to make 0s at 12 o'clock
+
+                // The marker's own height is its length (15px for zero, 8px for half-second)
+                // The marker's own width is its thickness (3px for zero, 1px for half-second)
+                const markerLength = isZeroMark ? 15 : 8;
+                const markerThickness = isZeroMark ? 3 : 1;
+
+                // Style the marker itself (size is from CSS, but we need for calculations)
+                marker.style.width = `${markerThickness}px`;
+                marker.style.height = `${markerLength}px`;
+
+                // Position the marker's top-left corner at the center of the track element.
+                // Then use transforms to move and rotate it.
+                // The trackElement is 180x180. Its center is (90,90).
+                // The popup is 200x200. Its center is (100,100). Markers are added to trackElement.
+                marker.style.position = 'absolute';
+                marker.style.left = `calc(50% - ${markerThickness / 2}px)`; // Center the marker horizontally
+                marker.style.top = `calc(50% - ${markerLength / 2}px)`;   // Center the marker vertically
+
+                // Now, apply transforms:
+                // 1. Rotate it to the correct angle.
+                // 2. Translate it outwards along its new Y-axis (which was its original Y-axis before rotation)
+                //    by `markerPlacementRadius`.
+                // The CSS transform-origin for .time-slider-marker is `0 50%` (left edge, vertical center).
+                // Let's change it or work with it.
+                // If we use `transform-origin: center center` for the marker itself:
+                marker.style.transformOrigin = 'center center';
+                // Translate its center to the markerPlacementRadius, then rotate.
+                // translateY pushes it "up" relative to its own orientation.
+                // We want to push it radially from the main circle's center.
+
+                // Simpler:
+                // 1. Place marker at center of track div.
+                // 2. Set its transform-origin to `center bottom` (center of its bottom edge).
+                // 3. Translate it UP by `markerPlacementRadius`. This puts its bottom edge on the circle.
+                // 4. Rotate it by `angleDeg`.
+                marker.style.transformOrigin = `${markerThickness/2}px ${markerLength}px`; // Center bottom
+                marker.style.transform = `translate(0, -${markerPlacementRadius}px) rotate(${angleDeg}deg)`;
+
+                // The above is if the marker was "standing up" and we moved its base.
+                // Our CSS has transform-origin: 0 50% (left side, vertical middle of the line)
+                // And the marker's "length" is its CSS height.
+                // Let's use the CSS defined origin.
+                // marker.style.left = '50%'; // Place left edge at horizontal center
+                // marker.style.top = `calc(50% - ${markerThickness / 2}px)`; // Vertically center its thickness
+                // marker.style.transform = `translateX(${markerPlacementRadius}px) rotate(${angleDeg}deg)`;
+                // This should rotate around the point (50%, 50% of its own height)
+                // and that point should be on the markerPlacementRadius circle.
+
+                // Recalculate with CSS origin `0 50%` (left edge, vertical center of the line)
+                // The marker has width (thickness) and height (length).
+                // We want the point (0, markerLength/2) of the marker to be at `markerPlacementRadius` at `angleDeg`.
+                const originXOffset = 0; // from its own left
+                const originYOffset = markerLength / 2; // from its own top
+
+                // Calculate position for the marker's top-left corner
+                const rotationRad = angleDeg * Math.PI / 180;
+                const markerTopLeftX = (trackElement.offsetWidth / 2) + markerPlacementRadius * Math.cos(rotationRad) - originXOffset * Math.cos(rotationRad) + originYOffset * Math.sin(rotationRad);
+                const markerTopLeftY = (trackElement.offsetHeight / 2) + markerPlacementRadius * Math.sin(rotationRad) - originYOffset * Math.cos(rotationRad) - originXOffset * Math.sin(rotationRad);
+
+                marker.style.left = `${markerTopLeftX - markerThickness/2}px`; // Adjust because origin is left, but visually we want center of thickness
+                marker.style.top = `${markerTopLeftY}px`; // This is the top for the origin point.
+                // This is getting complicated. Let's use absolute positioning and direct rotation.
+
+                // Final simplified marker positioning:
+                // Markers are children of .time-slider-track (180x180). Center is (90,90).
+                // CSS for marker: position:absolute, transform-origin: 0 50% (left edge, vertical center)
+                // The marker's visual "line" is its height.
+                // We want the marker's origin point to sit on the `markerPlacementRadius` circle.
+                // And the marker should be rotated to be radial.
+
+                const finalAngleDeg = angleDeg + 90; // Add 90 because line is vertical (height), rotation is from horizontal X-axis
+
+                // Position the marker's origin point (its left-center)
+                const originX = (trackElement.offsetWidth / 2) + markerPlacementRadius * Math.cos(finalAngleDeg * Math.PI / 180);
+                const originY = (trackElement.offsetHeight / 2) + markerPlacementRadius * Math.sin(finalAngleDeg * Math.PI / 180);
+
+                // Set the marker's top-left based on its origin
+                // marker.style.left = `${originX}px`; // This is where its left edge should be
+                // marker.style.top = `${originY - (markerLength / 2)}px`; // Adjust for vertical centering of origin
+
+                // Correct approach: Position the div, then rotate it.
+                // Div is `markerThickness` wide, `markerLength` high.
+                // Place its top-left corner.
+                // The line should extend inwards/outwards from the `markerPlacementRadius`.
+                // Let's say marker line is centered on `markerPlacementRadius`.
+                const lineCenterX = (trackElement.offsetWidth / 2) + markerPlacementRadius * Math.cos(angleDeg * Math.PI / 180);
+                const lineCenterY = (trackElement.offsetHeight / 2) + markerPlacementRadius * Math.sin(angleDeg * Math.PI / 180);
+
+                marker.style.left = `${lineCenterX - markerThickness / 2}px`;
+                marker.style.top = `${lineCenterY - markerLength / 2}px`;
+                marker.style.transform = `rotate(${angleDeg + 90}deg)`; // +90 because line is vertical, rotate around its center
+
+                trackElement.appendChild(marker);
+            }
 
             this.timeSliderThumb.addEventListener('mousedown', (e) => {
                 this.isDraggingSlider = true;
@@ -531,19 +642,24 @@ ${loopCode}
         this.currentTimeInput = inputElement;
         const rect = inputElement.getBoundingClientRect();
 
-        // Position slider near the input. Adjust as needed.
-        let top = rect.bottom + window.scrollY + 10;
-        let left = rect.left + window.scrollX;
+        const sliderWidth = 200; // Width of .time-slider-popup
+        const sliderHeight = 200; // Height of .time-slider-popup
 
-        // Basic boundary detection (so it doesn't go off-screen)
-        if (top + 200 > window.innerHeight + window.scrollY) {
-            top = rect.top + window.scrollY - 200 - 10;
-        }
-        if (left + 200 > window.innerWidth + window.scrollX) {
-            left = window.innerWidth + window.scrollX - 200 - 10;
-        }
-        if (left < 0) left = 10;
+        // Calculate desired centered position
+        let left = rect.left + window.scrollX + (rect.width / 2) - (sliderWidth / 2);
+        let top = rect.bottom + window.scrollY + 10; // 10px below the input field
 
+        // Adjust if going off-screen vertically
+        if (top + sliderHeight > window.innerHeight + window.scrollY) {
+            top = rect.top + window.scrollY - sliderHeight - 10; // Position above input
+        }
+        // Adjust if going off-screen horizontally
+        if (left + sliderWidth > window.innerWidth + window.scrollX) {
+            left = window.innerWidth + window.scrollX - sliderWidth - 5; // 5px padding from right edge
+        }
+        if (left < 5) { // 5px padding from left edge
+            left = 5;
+        }
 
         this.timeSliderElement.style.top = `${top}px`;
         this.timeSliderElement.style.left = `${left}px`;
@@ -575,9 +691,9 @@ ${loopCode}
         const y = thumbRadius * Math.sin(angle * Math.PI / 180);
 
         // Thumb position is relative to slider center (100,100 for a 200x200 slider)
-        // and thumb is 20x20, so offset by half its size to center it.
-        this.timeSliderThumb.style.left = `${100 + x - 10}px`;
-        this.timeSliderThumb.style.top = `${100 + y - 10}px`;
+        // and thumb is 30x30, so offset by half its size (15) to center it.
+        this.timeSliderThumb.style.left = `${100 + x - 15}px`;
+        this.timeSliderThumb.style.top = `${100 + y - 15}px`;
 
         const displaySeconds = seconds.toFixed(2);
         this.timeSliderText.innerHTML = `${displaySeconds} <span>seconds</span>`;
@@ -607,7 +723,17 @@ ${loopCode}
         // Add support for multiple rotations if needed, or cap at maxValue
         // For now, simple 0-60 seconds mapping
 
-        value = parseFloat(value.toFixed(2)); // Millisecond precision (2 decimal places)
+        // Snapping logic
+        const snapInterval = 0.5; // Snap every 0.5 seconds
+        const zeroSnapThreshold = 0.25; // Larger threshold for snapping to 0
+
+        if (value < zeroSnapThreshold || value > maxValue - zeroSnapThreshold) {
+            value = 0;
+        } else {
+            value = Math.round(value / snapInterval) * snapInterval;
+        }
+
+        value = parseFloat(value.toFixed(2)); // Ensure two decimal places
 
         this.updateSliderFromValue(value);
 
