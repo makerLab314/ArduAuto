@@ -1,287 +1,940 @@
-/* Globale Stile und Variablen */
+/* Global Styling Foundation - Cyber-Luxe Redesign */
 :root {
-    --primary-color: #4a90e2;
-    --logic-color: #8e44ad; /* NEU für Logik-Blöcke */
-    --danger-color: #d0021b;
-    --warning-color: #f5a623;
-    --success-color: #2ecc71;
-    --background-color: #121212; /* Dark mode background */
-    --surface-color: #1E1E1E; /* Dark mode surface */
-    --text-color: #FFFFFF; /* Dark mode text */
-    --border-color: #333333; /* Dark mode border */
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.25); /* Adjusted shadow for dark mode */
-    --border-radius: 8px;
+    --primary-glow-color: #00ffff; /* Cyan/Aqua for primary actions and glows */
+    --secondary-glow-color: #ff00ff; /* Magenta for accents */
+    --logic-glow-color: #9d00ff; /* Purple for logic blocks */
+
+    --base-bg-color: #05080d; /* Very dark blue/black */
+    --panel-bg-color: rgba(10, 20, 40, 0.7); /* Semi-transparent dark blue for panels */
+    --panel-border-color: rgba(0, 255, 255, 0.3); /* Subtle cyan border for panels */
+    --panel-shadow-color: rgba(0, 255, 255, 0.2); /* Glow shadow for panels */
+    
+    --text-color: #e0e0e0; /* Light grey for primary text */
+    --text-secondary-color: #a0a0a0; /* Dimmer grey for secondary text */
+    --text-on-glow-color: #000000; /* Black text on glowing buttons if needed */
+
+    --danger-color: #ff4d4d;
+    --warning-color: #ffcc00;
+    --success-color: #00ffaa;
+
+    --border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --border-radius-sm: 5px;
+
+    --font-primary: 'Exo 2', sans-serif;
+    --font-secondary: 'Roboto', sans-serif;
+    --font-code: 'Fira Code', monospace;
+
+    --shadow-strong: 0 0 15px 5px var(--panel-shadow-color);
+    --shadow-medium: 0 0 10px 2px var(--panel-shadow-color);
+    --shadow-subtle: 0 0 5px 1px rgba(200, 200, 255, 0.1);
+    
+    --backdrop-filter-glass: blur(10px) saturate(150%);
 }
 
+/* Apply a subtle animated gradient or static image background if possible, otherwise solid */
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color); /* Ensure body text is light */
-    margin: 0; padding: 2rem;
+    font-family: var(--font-secondary);
+    background-color: var(--base-bg-color);
+    background-image: 
+        radial-gradient(ellipse at 70% 30%, rgba(0, 50, 100, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 30% 70%, rgba(50, 0, 100, 0.3) 0%, transparent 50%);
+    color: var(--text-color);
+    margin: 0;
+    padding: 2rem;
+    overflow-x: hidden; /* Prevent horizontal scrollbars from glows */
+    line-height: 1.6;
+    perspective: 1000px; /* Add perspective for potential 3D transforms on children */
 }
 
-.container { max-width: 1300px; margin: 0 auto; }
-header { text-align: center; margin-bottom: 2rem; font-family: 'Exo 2', sans-serif; }
-header h1 { color: var(--primary-color); font-family: 'Exo 2', sans-serif; }
-header h1 i { margin-right: 10px; font-family: 'Exo 2', sans-serif; }
-header p { color: var(--text-color); } /* Ensure header paragraph text is light */
+.container {
+    max-width: 1400px; /* Increased max-width for a more spacious feel */
+    margin: 0 auto;
+    padding: 1rem; /* Add some padding to the main container */
+    background-color: rgba(0,0,0,0.1); /* Slight darkening for main content area if needed */
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-subtle);
+}
 
-.main-layout { display: flex; gap: 2rem; align-items: flex-start; }
-#baustein-palette { flex: 1; background: var(--surface-color); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); position: sticky; top: 2rem; }
-#programm-bereich-container { flex: 2; }
-h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin: 0 0 1rem 0; color: var(--text-color); } /* Ensure h2 text is light */
-.kategorie { margin-bottom: 1.5rem; }
-.kategorie h3 { font-size: 0.9em; color: #bbbbbb; margin-bottom: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; } /* Lighter color for category headers */
+/* Headings and general text styling */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-primary);
+    color: var(--text-color);
+    text-shadow: 0 0 5px rgba(200, 220, 255, 0.3);
+}
 
-/* Bausteine in der Palette */
-#baustein-palette .baustein {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 10px 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    cursor: grab;
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: bold;
+h1 {
+    font-size: 2.8em;
+    color: var(--primary-glow-color);
+    text-align: center;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 10px var(--primary-glow-color), 0 0 20px var(--primary-glow-color);
+}
+
+h2 {
+    font-size: 1.8em;
+    padding-bottom: 0.5rem;
+    margin: 0 0 1.5rem 0;
+    border-bottom: 1px solid var(--panel-border-color);
+}
+
+h3 {
+    font-size: 1.2em;
+    color: var(--text-secondary-color);
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+p {
+    color: var(--text-secondary-color);
+    font-family: var(--font-secondary);
+}
+
+a {
+    color: var(--primary-glow-color);
+    text-decoration: none;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+a:hover, a:focus {
+    color: #fff;
+    text-shadow: 0 0 8px var(--primary-glow-color);
+}
+
+/* Basic button reset - will be styled more specifically later */
+button {
+    font-family: var(--font-primary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-color);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Utility class for glass panels */
+.glass-panel {
+    background-color: var(--panel-bg-color);
+    border: 1px solid var(--panel-border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-medium);
+    -webkit-backdrop-filter: var(--backdrop-filter-glass);
+    backdrop-filter: var(--backdrop-filter-glass);
+    padding: 1.5rem;
+    position: relative; /* For potential pseudo-elements or absolute children */
+    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out; /* For hover effects */
+}
+
+.glass-panel:hover {
+    /* Example: Slightly lift the panel on hover for more depth */
+    /* transform: translateZ(10px) translateY(-5px); */ /* This can be too much, use with caution */
+    /* box-shadow: 0 10px 30px 5px var(--panel-shadow-color); */ /* More pronounced shadow on hover */
+}
+
+
+/* Scrollbar styling for a more modern look (Webkit browsers) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-glow-color);
+    border-radius: 10px;
+    box-shadow: 0 0 5px var(--primary-glow-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00dddd; /* Brighter cyan */
+    box-shadow: 0 0 8px var(--primary-glow-color);
+}
+
+/* Basic input styling - will be refined per component */
+input[type="text"],
+textarea {
+    background-color: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border-color);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-code);
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-glow-color);
+    box-shadow: 0 0 8px var(--primary-glow-color);
+}
+
+/* Main Layout Sections Styling */
+header {
+    padding: 1rem 0 2rem; /* Adjusted padding */
+    border-bottom: 1px solid rgba(0, 255, 255, 0.1); /* Subtle separator */
+    margin-bottom: 2rem;
+}
+
+header h1 i {
+    margin-right: 15px;
+    /* Optional: animate icon slightly */
+    /* transition: transform 0.3s ease; */
+}
+/* header h1:hover i {
+    transform: rotateY(180deg);
+} */
+
+header p {
+    font-size: 1.1em;
+    color: var(--text-secondary-color);
+    text-shadow: 0 0 3px rgba(200, 200, 255, 0.2);
+}
+
+.main-layout {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+#baustein-palette {
+    flex: 0 0 300px; /* Fixed width for palette */
+    position: sticky;
+    top: 2rem;
+    max-height: calc(100vh - 4rem); /* Adjust based on your header/footer or padding */
+    overflow-y: auto;
+    padding-right: 10px; /* Space for scrollbar if it appears inside */
+}
+
+#baustein-palette,
+#programm-bereich-container,
+#code-output-bereich .code-container, /* Target the inner container for code */
+#programm-ablauf /* Style the dropzone itself as a glass panel */
+ {
+    composes: glass-panel; /* This is a conceptual way to say it uses .glass-panel styles */
+    /* Explicitly apply glass-panel styles here as 'composes' isn't standard CSS */
+    background-color: var(--panel-bg-color);
+    border: 1px solid var(--panel-border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-medium);
+    -webkit-backdrop-filter: var(--backdrop-filter-glass);
+    backdrop-filter: var(--backdrop-filter-glass);
+    padding: 1.5rem;
+    position: relative;
+}
+
+#programm-bereich-container {
+    flex: 2; /* Takes more space */
+    /* background-color: transparent; 
+    border: none;
+    box-shadow: none;
+    padding: 0; */ /* Reset glass-panel if container is just a wrapper */
+}
+
+
+#baustein-palette h2, 
+#programm-bereich-container .programm-header h2, /* Target h2 within its header */
+#code-output-bereich .code-header-container h2 /* Target h2 within its header */
+{
+    color: var(--primary-glow-color);
+    text-shadow: 0 0 8px var(--primary-glow-color);
+    border-bottom: 1px solid var(--primary-glow-color);
+    margin-bottom: 1.5rem; /* Consistent margin */
+}
+
+#baustein-palette .kategorie h3 {
+    font-size: 1em; /* Slightly smaller for sub-sections */
+    color: var(--text-color);
+    margin-bottom: 0.8rem;
+    font-weight: 500; /* Lighter weight */
     display: flex;
     align-items: center;
-    user-select: none;
+    gap: 8px;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-sm);
+    background-color: rgba(0, 255, 255, 0.05);
+    border-left: 3px solid var(--primary-glow-color);
 }
-#baustein-palette .baustein.stopp { background-color: var(--danger-color); }
-#baustein-palette .baustein.warten { background-color: var(--warning-color); }
-#baustein-palette .baustein.kommentar { background-color: #6c757d; justify-content: flex-start; gap: 10px; }
-#baustein-palette .baustein.if-else { background-color: var(--logic-color); } /* NEU */
-#baustein-palette .warten-input, #baustein-palette .kommentar textarea { pointer-events: none; }
+#baustein-palette .kategorie h3 i {
+    color: var(--primary-glow-color);
+}
 
-/* Programm-Ablauf & Dropzone */
+
+/* Program Area & Dropzone Specifics */
 #programm-ablauf {
-    background-color: var(--surface-color);
-    border: 2px dashed var(--border-color);
-    border-radius: var(--border-radius);
     min-height: 400px;
-    padding: 1rem;
+    border-style: dashed; /* Keep dashed for dropzone indication */
+    border-width: 2px;
+    border-color: rgba(0, 255, 255, 0.4); /* Brighter dashed border */
+    background-color: rgba(10, 20, 40, 0.6); /* Slightly different bg for dropzone */
     transition: background-color 0.3s, border-color 0.3s;
 }
-#programm-ablauf:empty::before, .nested-dropzone:empty::before { /* Angepasst */
+
+#programm-ablauf:empty::before, 
+.nested-dropzone:empty::before {
     content: "Ziehe Bausteine hierher";
     display: flex;
-    min-height: 50px; /* Angepasst */
+    min-height: 50px;
     height: 100%;
     align-items: center;
     justify-content: center;
-    color: #5a76a5; /* Adjusted color for dark mode */
+    color: var(--primary-glow-color); /* Glowing placeholder text */
     font-style: italic;
-    font-size: 0.9em;
+    font-size: 1em;
+    opacity: 0.6;
+    text-shadow: 0 0 5px var(--primary-glow-color);
 }
-#programm-ablauf:empty::before { min-height: 380px; content: "Ziehe Bausteine hierher oder lade ein Beispiel"; }
-#programm-ablauf.sortable-ghost { background: rgba(74, 144, 226, 0.05); } /* Adjusted for dark mode */
+#programm-ablauf:empty::before { 
+    min-height: 380px; 
+    content: "Ziehe Bausteine hierher oder lade ein Beispiel"; 
+}
+#programm-ablauf.sortable-ghost { 
+    background: rgba(0, 255, 255, 0.1); /* Glow effect when dragging over */
+    border-color: var(--primary-glow-color);
+}
 
-/* Einzelne Blöcke im Programm-Ablauf */
+/* Code Output Area Specifics */
+#code-output-bereich {
+    margin-top: 2rem;
+    /* This outer section doesn't need to be a glass panel itself if its children are */
+}
+
+#code-output-bereich .code-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem; /* Space before the code container */
+}
+
+#loop-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9em;
+    color: var(--text-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-md);
+    background-color: rgba(0,0,0,0.2); /* Darker bg for this control */
+    border: 1px solid var(--panel-border-color);
+}
+#loop-toggle-container label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+#loop-toggle-container label:hover {
+    color: var(--primary-glow-color);
+}
+#loop-toggle-container input[type="radio"] {
+    accent-color: var(--primary-glow-color); /* Style the radio button itself */
+}
+#loop-toggle-container code {
+    background-color: rgba(0, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+    color: var(--primary-glow-color);
+}
+
+
+#code-output-bereich .code-container {
+    /* Already a glass-panel via the shared rule */
+    overflow: hidden; /* Ensure children (pre/code) don't break rounded corners */
+}
+
+.code-header { /* Header within the code container */
+    background-color: rgba(0,0,0,0.4); /* Darker, less transparent header for code */
+    color: var(--text-secondary-color);
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--panel-border-color);
+}
+.code-header span {
+    font-family: var(--font-code);
+    font-weight: bold;
+    color: var(--primary-glow-color);
+}
+
+/* Prism okaidia theme adjustments - if needed. For now, it's dark and should fit okay.
+   If specific overrides are required, they would go here. e.g.: */
+pre[class*="language-"].line-numbers {
+    background: rgba(0,0,0,0.3); /* Make Prism bg slightly transparent to show page bg */
+    border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+    padding: 1em; /* Default padding for Prism */
+    margin: 0;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5); /* Inner shadow for depth */
+}
+.token.operator {
+    background: none; /* Remove default background from okaidia if it has one */
+    color: var(--secondary-glow-color); /* Example: Make operators magenta */
+}
+.token.keyword {
+    color: var(--primary-glow-color); /* Example: Make keywords cyan */
+}
+.token.comment {
+    color: #6a9955; /* Keep comments greenish, good contrast */
+    text-shadow: none;
+}
+.token.string {
+    color: #ce9178; /* Keep strings orangey */
+}
+.token.function {
+    color: #dcdcaa; /* Keep functions yellowish */
+}
+.token.number {
+    color: #b5cea8;
+}
+.line-numbers .line-numbers-rows > span::before {
+    color: var(--text-secondary-color) !important; /* Ensure line numbers are visible */
+    opacity: 0.5;
+    text-shadow: none;
+}
+
+/* Sticky Palette Scrollbar - already handled by ::-webkit-scrollbar */
+#baustein-palette::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+#baustein-palette::-webkit-scrollbar-thumb {
+    background: rgba(0,255,255, 0.3);
+}
+#baustein-palette::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,255,255, 0.5);
+}
+
+/* Ensure main layout elements don't get glass-panel styling if they are just wrappers */
+#programm-bereich-container.glass-panel {
+    /* This rule is if #programm-bereich-container itself *is* the panel */
+    /* If it's a wrapper, and #programm-ablauf is the panel, then this isn't needed */
+}
+#programm-bereich-container:not(.glass-panel) { 
+    /* If it's just a flex wrapper and not a panel itself */
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* For this project, #programm-bereich-container is a wrapper. 
+   #programm-ablauf is the panel for dropping.
+   #baustein-palette is a panel.
+   #code-output-bereich .code-container is a panel.
+*/
+
+/* Let's adjust the shared rule to be more specific or remove #programm-bereich-container from it */
+/* Original shared rule:
+#baustein-palette,
+#programm-bereich-container,
+#code-output-bereich .code-container, 
+#programm-ablauf 
+ { ... }
+*/
+
+/* Corrected application of glass-panel concept: */
+#baustein-palette, /* This is a panel */
+#programm-ablauf, /* This is a panel (the dropzone) */
+#code-output-bereich .code-container /* This is a panel (the code view) */
+{
+    background-color: var(--panel-bg-color);
+    border: 1px solid var(--panel-border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-medium);
+    -webkit-backdrop-filter: var(--backdrop-filter-glass);
+    backdrop-filter: var(--backdrop-filter-glass);
+    padding: 1.5rem;
+    position: relative;
+}
+
+/* #programm-bereich-container is purely structural */
+#programm-bereich-container {
+     flex: 2;
+     display: flex; /* Use flex to manage its children */
+     flex-direction: column;
+     gap: 1rem; /* Space between header and dropzone */
+}
+#programm-bereich-container .programm-header {
+    /* Style the header within this section if needed, but it's not a panel */
+    /* Example: add padding or a bottom border if desired */
+    padding-bottom: 0.5rem;
+    /* border-bottom: 1px solid var(--panel-border-color); */ /* Optional: if you want a line under "Dein Programmablauf" */
+}
+
+/* Styling for Individual Blocks */
+
+/* Base styles for blocks in the palette */
+#baustein-palette .baustein {
+    background-color: rgba(0, 255, 255, 0.1); /* Light cyan transparent background */
+    color: var(--text-color);
+    padding: 12px 18px; /* Increased padding */
+    margin-bottom: 12px; /* Increased margin */
+    border-radius: var(--border-radius-sm);
+    cursor: grab;
+    font-family: var(--font-code);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 5px rgba(0, 255, 255, 0.1) inset;
+    transition: all 0.2s ease-out;
+    position: relative; /* For pseudo-elements if needed for more effects */
+    overflow: hidden; /* For potential shine effects */
+}
+
+#baustein-palette .baustein::before { /* Subtle gradient overlay */
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.05) 75%, transparent 75%, transparent);
+    background-size: 30px 30px;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+
+#baustein-palette .baustein:hover {
+    background-color: rgba(0, 255, 255, 0.2);
+    border-color: var(--primary-glow-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--primary-glow-color), 0 0 8px rgba(0, 255, 255, 0.2) inset;
+    transform: translateY(-2px) scale(1.02); /* Lift and slightly enlarge */
+}
+
+/* Specific types of blocks in palette */
+#baustein-palette .baustein.stopp { 
+    background-color: rgba(255, 77, 77, 0.1); /* var(--danger-color) with alpha */
+    border-color: rgba(255, 77, 77, 0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 5px rgba(255, 77, 77, 0.1) inset;
+}
+#baustein-palette .baustein.stopp:hover {
+    background-color: rgba(255, 77, 77, 0.2);
+    border-color: var(--danger-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--danger-color), 0 0 8px rgba(255, 77, 77, 0.2) inset;
+}
+
+#baustein-palette .baustein.warten { /* Covers fahre_bis_hindernis and warten */
+    background-color: rgba(255, 204, 0, 0.1); /* var(--warning-color) with alpha */
+    border-color: rgba(255, 204, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 5px rgba(255, 204, 0, 0.1) inset;
+}
+#baustein-palette .baustein.warten:hover {
+    background-color: rgba(255, 204, 0, 0.2);
+    border-color: var(--warning-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--warning-color), 0 0 8px rgba(255, 204, 0, 0.2) inset;
+}
+
+#baustein-palette .baustein.kommentar { 
+    background-color: rgba(170, 170, 170, 0.1); /* Greyish */
+    border-color: rgba(170, 170, 170, 0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 5px rgba(170, 170, 170, 0.1) inset;
+}
+#baustein-palette .baustein.kommentar:hover {
+    background-color: rgba(170, 170, 170, 0.2);
+    border-color: #aaa;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px #aaa, 0 0 8px rgba(170, 170, 170, 0.2) inset;
+}
+
+#baustein-palette .baustein.if-else { 
+    background-color: rgba(157, 0, 255, 0.1); /* var(--logic-glow-color) with alpha */
+    border-color: rgba(157, 0, 255, 0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 5px rgba(157, 0, 255, 0.1) inset;
+}
+#baustein-palette .baustein.if-else:hover {
+    background-color: rgba(157, 0, 255, 0.2);
+    border-color: var(--logic-glow-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--logic-glow-color), 0 0 8px rgba(157, 0, 255, 0.2) inset;
+}
+
+/* Disable pointer events on inputs/textareas within palette blocks */
+#baustein-palette .warten-input, 
+#baustein-palette .kommentar textarea { 
+    pointer-events: none; 
+    background: rgba(0,0,0,0.2);
+    color: var(--text-secondary-color);
+    border: 1px solid transparent; /* Make it look flat in palette */
+}
+
+
+/* Styles for blocks in the Program Area (.programm-block) */
 .programm-block {
     display: flex;
     align-items: center;
-    padding: 8px;
-    margin-bottom: 8px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Adjusted shadow for dark mode */
-    background: var(--surface-color); /* Use surface color for blocks */
-    color: var(--text-color); /* Ensure text in blocks is light */
+    padding: 10px; /* Slightly less padding than palette for compactness */
+    margin-bottom: 10px;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-subtle), 0 0 3px rgba(0,255,255,0.1) inset;
+    background: var(--panel-bg-color); /* Use panel bg for a bit more opacity than palette */
+    color: var(--text-color);
     position: relative;
-    overflow: hidden;
+    border: 1px solid var(--panel-border-color);
+    transition: all 0.2s ease-in-out;
 }
-.programm-block .handle { cursor: grab; color: #888; margin-right: 10px; align-self: flex-start; padding-top: 4px; font-family: 'Exo 2', sans-serif; }
-.programm-block .content { flex-grow: 1; }
-.programm-block .actions { display: flex; gap: 5px; margin-left: 10px; align-self: flex-start; padding-top: 2px; font-family: 'Exo 2', sans-serif; }
+
+.programm-block:hover {
+    border-color: var(--primary-glow-color);
+    box-shadow: var(--shadow-medium), 0 0 8px rgba(0,255,255,0.2) inset;
+}
+
+.programm-block .handle { 
+    cursor: grab; 
+    color: rgba(0,255,255,0.5); 
+    margin-right: 12px; 
+    align-self: flex-start; /* Align with top of content */
+    padding-top: 4px; /* Adjust vertical alignment */
+    font-size: 1.2em;
+    transition: color 0.2s;
+}
+.programm-block .handle:hover {
+    color: var(--primary-glow-color);
+}
+
+.programm-block .content { 
+    flex-grow: 1; 
+    font-family: var(--font-code);
+    font-size: 0.95em;
+}
+.programm-block .actions { 
+    display: flex; 
+    gap: 8px; 
+    margin-left: 10px; 
+    align-self: flex-start; /* Align with top of content */
+    padding-top: 2px; /* Adjust vertical alignment */
+}
+
 .programm-block .actions button {
-    background: none; border: none; color: #aaa; cursor: pointer;
-    width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
+    background: none; 
+    border: none; 
+    color: var(--text-secondary-color); 
+    cursor: pointer;
+    width: 30px; height: 30px; 
+    display: grid; place-items: center; 
+    border-radius: 50%;
+    transition: all 0.2s;
+    font-size: 0.9em;
 }
-.programm-block .actions button:hover { background: #333; color: #eee; } /* Darker hover for buttons */
-.programm-block .actions .delete-btn:hover { color: var(--danger-color); }
+.programm-block .actions button:hover { 
+    background: rgba(0, 255, 255, 0.1); 
+    color: var(--primary-glow-color); 
+    box-shadow: 0 0 5px var(--primary-glow-color);
+}
+.programm-block .actions .delete-btn:hover { 
+    background: rgba(255, 77, 77, 0.1);
+    color: var(--danger-color); 
+    box-shadow: 0 0 5px var(--danger-color);
+}
 
-/* Block-spezifische Stile */
-.programm-block[data-type^="vorwaerts"], .programm-block[data-type^="drehe"], .programm-block[data-type="rueckwaerts"] { border-left: 5px solid var(--primary-color); }
-.programm-block[data-type="stopp"] { border-left: 5px solid var(--danger-color); }
-.programm-block[data-type="warten"], .programm-block[data-type="fahre_bis_hindernis"] { border-left: 5px solid var(--warning-color); } /* Erweitert */
-.programm-block[data-type="kommentar"] { border-left: 5px solid #6c757d; }
-.programm-block[data-type="if_else_abstand"] { border-left: 5px solid var(--logic-color); flex-direction: column; align-items: stretch; overflow: visible; } /* NEU */
+/* Colored side borders for block types in program area */
+.programm-block[data-type^="vorwaerts"], 
+.programm-block[data-type^="drehe"], 
+.programm-block[data-type="rueckwaerts"] { 
+    border-left: 5px solid var(--primary-glow-color); 
+    box-shadow: -3px 0 8px -2px var(--primary-glow-color), var(--shadow-subtle);
+}
+.programm-block[data-type="stopp"] { 
+    border-left: 5px solid var(--danger-color); 
+    box-shadow: -3px 0 8px -2px var(--danger-color), var(--shadow-subtle);
+}
+.programm-block[data-type="warten"], 
+.programm-block[data-type="fahre_bis_hindernis"] { 
+    border-left: 5px solid var(--warning-color); 
+    box-shadow: -3px 0 8px -2px var(--warning-color), var(--shadow-subtle);
+}
+.programm-block[data-type="kommentar"] { 
+    border-left: 5px solid var(--text-secondary-color); 
+    box-shadow: -3px 0 8px -2px var(--text-secondary-color), var(--shadow-subtle);
+}
+.programm-block[data-type="if_else_abstand"] { 
+    border-left: 5px solid var(--logic-glow-color); 
+    box-shadow: -3px 0 8px -2px var(--logic-glow-color), var(--shadow-subtle);
+    flex-direction: column; 
+    align-items: stretch; 
+    overflow: visible; /* Important for nested elements */
+}
 
-/* Stile für den If/Else Block */
-.if-else-container { display: flex; flex-direction: column; width: 100%; }
-.if-else-header { display: flex; align-items: center; padding: 4px; background: #2c2c2c; border-radius: 4px; } /* Darker background for if-else header */
-.if-else-header code { background-color: rgba(142, 68, 173, 0.2); padding: 2px 6px; border-radius: 4px; color: #e0e0e0; } /* Adjusted for dark mode */
-.if-branch, .else-branch { margin-left: 20px; margin-top: 8px; }
-.branch-header { font-weight: bold; font-family: 'Courier New', monospace; font-size: 0.9em; padding: 4px; }
-.if-branch .branch-header { color: var(--logic-color); }
-.else-branch .branch-header { color: #999999; } /* Lighter color for else branch header */
+/* Inputs and Textareas within Program Blocks */
+.programm-block .warten-input,
+.programm-block .kommentar-textarea {
+    width: auto; /* Allow natural sizing based on content or specific class width */
+    min-width: 60px; /* Ensure a minimum width for number inputs */
+    border: 1px solid var(--panel-border-color);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+    padding: 6px 8px;
+    font-family: var(--font-code);
+    background-color: rgba(0,0,0,0.5); /* Darker, more contrasty input bg */
+    color: var(--text-color);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.programm-block .warten-input:focus,
+.programm-block .kommentar-textarea:focus {
+    border-color: var(--primary-glow-color);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 0 8px var(--primary-glow-color);
+    outline: none;
+}
+.programm-block .warten-input.invalid { 
+    border-color: var(--danger-color) !important; 
+    background: rgba(255,0,0,0.1);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 0 8px var(--danger-color) !important;
+}
+.programm-block .kommentar-textarea {
+    width: 100%; /* Textarea usually spans full width */
+    text-align: left;
+    resize: vertical; 
+    min-height: 30px; /* Slightly taller */
+}
+
+/* If/Else Block Specific Styling */
+.if-else-container { 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+    gap: 0.5rem; /* Space between header and branches */
+}
+.if-else-header { 
+    display: flex; 
+    align-items: center; 
+    padding: 6px 8px; 
+    background: rgba(var(--logic-glow-color), 0.1); /* Use logic color, but very subtle */
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9em;
+}
+.if-else-header code { 
+    background-color: rgba(0, 255, 255, 0.1); 
+    padding: 2px 6px; 
+    border-radius: var(--border-radius-sm); 
+    color: var(--primary-glow-color); 
+    margin: 0 5px;
+}
+.if-else-header .warten-input { /* Input specifically within if-else header */
+    margin: 0 5px; /* Add some spacing around the input */
+}
+
+.if-branch, .else-branch { 
+    margin-left: 20px; /* Indentation for branches */
+    padding-left: 15px; /* Additional padding for visual separation */
+    border-left: 2px dashed rgba(157, 0, 255, 0.3); /* Dashed line for branches, logic color */
+    position: relative;
+}
+.branch-header { 
+    font-weight: normal; 
+    font-family: var(--font-code); 
+    font-size: 0.85em; 
+    padding: 4px 0; 
+    color: var(--text-secondary-color);
+    margin-bottom: 0.5rem;
+}
+.if-branch .branch-header { color: var(--logic-glow-color); opacity: 0.8; }
+.else-branch .branch-header { color: var(--text-secondary-color); opacity: 0.7;}
+
 .nested-dropzone {
     min-height: 60px;
-    background: #252525; /* Darker background for nested dropzone */
-    border: 1px dashed #444444; /* Darker border for nested dropzone */
-    border-radius: 6px;
+    background: rgba(0,0,0,0.2); /* Darker, subtle background for nesting */
+    border: 1px dashed rgba(157, 0, 255, 0.4); /* Dashed border, logic color */
+    border-radius: var(--border-radius-md);
     padding: 10px;
     margin-top: 4px;
+    transition: background-color 0.2s, border-color 0.2s;
 }
-.nested-dropzone:empty::before { color: #5a76a5; } /* Ensure placeholder text is visible */
-
-
-/* Stile für Inputs */
-.programm-block .warten-input {
-    width: 60px; border: 1px solid #555; border-radius: 6px; text-align: center;
-    padding: 4px; font-family: 'Courier New', monospace;
-    background-color: #333; color: var(--text-color); /* Dark mode for inputs */
+.nested-dropzone:empty::before { 
+    color: rgba(157, 0, 255, 0.6); /* Placeholder text for nested zones */
+    font-size: 0.9em;
+    opacity: 0.7;
 }
-.programm-block .warten-input.invalid { border-color: var(--danger-color); background: #402020; outline-color: var(--danger-color); } /* Darker invalid input */
-.programm-block .kommentar-textarea {
-    width: 100%; border: 1px solid #555; border-radius: 6px; padding: 4px;
-    font-family: 'Exo 2', sans-serif;  resize: vertical; min-height: 25px;
-    background-color: #333; color: var(--text-color); /* Dark mode for textarea */
+.nested-dropzone.sortable-ghost {
+    background: rgba(157, 0, 255, 0.1);
+    border-color: var(--logic-glow-color);
 }
 
-/* UI-Elemente */
-.programm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.top-actions { display: flex; gap: 0.5rem; }
-.top-actions button, .dropdown-btn { font-size: 0.9em; padding: 8px 12px; }
-button { background: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-button:hover:not(:disabled) { filter: brightness(1.2); } /* Adjusted brightness for dark mode */
-button:active:not(:disabled) { transform: scale(0.98); }
-button:disabled { background: #555; color: #aaa; cursor: not-allowed; } /* Darker disabled button */
-button.danger-btn { background-color: #c0392b; } /* Slightly adjusted danger color */
-
-/* Dropdown */
-.dropdown { position: relative; display: inline-block; }
-.dropdown-content { display: none; position: absolute; background-color: var(--surface-color); min-width: 160px; box-shadow: var(--shadow); z-index: 1; border-radius: 5px; overflow: hidden; right: 0; border: 1px solid var(--border-color); }
-.dropdown-content a { color: var(--text-color); padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9em; }
-.dropdown-content a:hover { background-color: #333333; } /* Darker hover for dropdown items */
-.dropdown:hover .dropdown-content { display: block; }
-
-/* Toast-Benachrichtigungen */
-#toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; }
-.toast { background: #444; color: white; padding: 15px 20px; border-radius: 5px; margin-bottom: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); animation: slideIn 0.5s forwards; }
-.toast.success { background: var(--success-color); color: #1E1E1E; } /* Ensure text is readable on success */
-.toast.error { background: var(--danger-color); color: white; }
-@keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
-
-/* Code-Output */
-#code-output-bereich { margin-top: 2rem; }
-.code-header-container { display: flex; justify-content: space-between; align-items: center; } /* NEU */
-#loop-toggle-container { display: flex; align-items: center; gap: 15px; font-size: 0.9em; color: var(--text-color); } /* NEU, ensure text is light */
-#loop-toggle-container label { display: flex; align-items: center; gap: 5px; cursor: pointer; } /* NEU */
-.code-container { border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; margin-top: 1rem; }
-.code-header { background-color: #2a2a2a; color: #ccc; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; }
-#copy-btn.copied { background: var(--success-color); color: #1E1E1E; } /* Ensure text is readable on copied */
-pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var(--border-radius); font-family: 'Fira Code', monospace; font-size: 0.9em; max-height: 400px; }
-/* Prism Okaidia is already a dark theme, so it should work well.
-   If adjustments are needed, they would be here, targeting .token classes */
-
-/* Circular Time Slider Styles - New SVG Morphing Approach */
-.time-slider-popup {
-    position: fixed;
-    width: 200px; height: 200px;
-    border-radius: 50%;
-    box-shadow: var(--shadow);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1001;
-    user-select: none;
-    backdrop-filter: blur(18px) saturate(120%);
-    background-color: rgba(40, 40, 40, 0.65);
-    border: 1px solid var(--border-color);
+/* Style for block being dragged from palette */
+.dragging-from-palette {
+    background-color: rgba(0, 255, 255, 0.3) !important;
+    box-shadow: 0 0 15px var(--primary-glow-color) !important;
+    opacity: 0.8;
+    transform: scale(1.05);
 }
 
-.time-slider-svg-morphing {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    overflow: visible;
-}
+/* Styling for UI Elements (Buttons, Dropdowns, Toasts) */
 
-.track-ring-path {
-    fill: #5a8cd8; /* Track color from previous confirmed style */
-}
-
-.thumb-dent-path {
-    fill: var(--primary-color);
-    fill-opacity: 0.9;
-    stroke: rgba(255, 255, 255, 0.7);
-    stroke-width: 1px;
-    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2)) drop-shadow(0px 0px 1.5px rgba(0,0,0,0.15));
-    cursor: grab;
-}
-
-.time-slider-center-text {
-    font-family: 'Fira Code', monospace; font-size: 1.5em;
-    color: var(--text-color); text-align: center;
-    position: relative;
-    z-index: 4;
-}
-.time-slider-center-text span { display: block; font-size: 0.6em; color: #aaa; }
-
-.time-slider-marker {
-    position: absolute;
-    z-index: 2;
-}
-.time-slider-marker .marker-line {
-    display: block; width: 100%; height: 100%;
-    background-color: var(--text-color);
-    transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1.0);
-    transform-origin: center bottom;
-}
-.time-slider-marker.bumping .marker-line {
-    transform: scaleY(1.5) translateY(-2px);
-}
-.time-slider-marker.zero { /* JS sets width/height of parent marker div */ }
-.time-slider-marker.half-second { /* JS sets width/height of parent marker div */ }
-
-/* Circular Time Slider Styles */
-.time-slider-popup {
-    position: fixed; /* Use fixed to position relative to viewport, or absolute for relative to a positioned ancestor */
-    width: 200px;
-    height: 200px;
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    box-shadow: var(--shadow);
-    display: none; /* Hidden by default */
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 1001; /* Above other elements */
-    user-select: none; /* Prevent text selection during drag */
-}
-
-.time-slider-track {
-    position: absolute;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    border: 10px solid #69a0e8; /* Lighter shade of --primary-color (was --primary-color-light) */
-    box-sizing: border-box;
-}
-
-.time-slider-thumb {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background-color: var(--primary-color);
-    border-radius: 50%;
-    transform-origin: 50% 50%;
-    cursor: pointer;
-    border: 2px solid white;
-    box-sizing: border-box;
-    /* Thumb will be positioned by JavaScript based on the center of the slider */
-}
-
-.time-slider-center-text {
-    font-family: 'Fira Code', monospace;
-    font-size: 1.5em;
+/* General Button Styling */
+button, .dropdown-btn { /* Apply to .dropdown-btn as well */
+    background: linear-gradient(145deg, rgba(0, 255, 255, 0.15), rgba(0, 200, 200, 0.1));
     color: var(--text-color);
-    text-align: center;
+    border: 1px solid var(--panel-border-color);
+    padding: 10px 18px; /* Adjusted padding */
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-family: var(--font-primary);
+    font-size: 0.95em; /* Standardized font size */
+    transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-.time-slider-center-text span {
-    display: block;
-    font-size: 0.6em;
-    color: #aaa;
+button:hover:not(:disabled), .dropdown-btn:hover:not(:disabled) {
+    background: linear-gradient(145deg, rgba(0, 255, 255, 0.25), rgba(0, 200, 200, 0.2));
+    border-color: var(--primary-glow-color);
+    color: #fff; /* Brighter text on hover */
+    box-shadow: 0 0 10px var(--primary-glow-color), 0 3px 7px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    transform: translateY(-1px);
 }
+
+button:active:not(:disabled), .dropdown-btn:active:not(:disabled) {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: 0 0 5px var(--primary-glow-color), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(0,0,0,0.1);
+}
+
+button:disabled, .dropdown-btn:disabled {
+    background: rgba(50,50,50,0.3);
+    color: var(--text-secondary-color);
+    border-color: rgba(100,100,100,0.5);
+    cursor: not-allowed;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+/* Specific Button Types */
+button.danger-btn {
+    background: linear-gradient(145deg, rgba(255, 77, 77, 0.15), rgba(200, 50, 50, 0.1));
+    border-color: rgba(255, 77, 77, 0.4);
+}
+button.danger-btn:hover:not(:disabled) {
+    background: linear-gradient(145deg, rgba(255, 77, 77, 0.25), rgba(200, 50, 50, 0.2));
+    border-color: var(--danger-color);
+    box-shadow: 0 0 10px var(--danger-color), 0 3px 7px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Top Action Buttons (Undo, Redo, Save, Load) & Clear Button */
+.top-actions { display: flex; gap: 0.75rem; } /* Increased gap */
+.programm-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 1rem; 
+    padding-bottom: 1rem; /* Add some space below the header */
+    border-bottom: 1px solid var(--panel-border-color); /* Subtle separator for program header */
+}
+.action-buttons { margin-top: 1rem; text-align: right; } /* Align clear button to right */
+
+
+/* Dropdown Styling */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-btn { 
+    /* Uses general button styles */
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--panel-bg-color); /* Glassy dropdown */
+    min-width: 200px; /* Wider dropdown */
+    box-shadow: var(--shadow-strong); /* Stronger shadow for dropdown */
+    z-index: 100; /* Ensure it's above other elements */
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--panel-border-color);
+    overflow: hidden; /* Clip children to rounded corners */
+    right: 0; /* Align to the right of the button */
+    margin-top: 5px; /* Small space between button and dropdown */
+    -webkit-backdrop-filter: var(--backdrop-filter-glass);
+    backdrop-filter: var(--backdrop-filter-glass);
+}
+.dropdown-content a {
+    color: var(--text-secondary-color);
+    padding: 12px 18px;
+    text-decoration: none;
+    display: block;
+    font-size: 0.9em;
+    font-family: var(--font-secondary);
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.05); /* Subtle separator for items */
+}
+.dropdown-content a:last-child {
+    border-bottom: none;
+}
+.dropdown-content a:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+    color: var(--primary-glow-color);
+    text-shadow: 0 0 5px var(--primary-glow-color);
+}
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Toast Notifications Styling */
+#toast-container {
+    position: fixed;
+    top: 2rem; /* More space from top */
+    right: 2rem; /* More space from right */
+    z-index: 2000; /* Highest z-index */
+    width: 320px; /* Fixed width for toasts */
+}
+.toast {
+    background-color: var(--panel-bg-color); /* Glassy toasts */
+    color: var(--text-color);
+    padding: 15px 20px;
+    border-radius: var(--border-radius-md);
+    margin-bottom: 1rem; /* More space between toasts */
+    box-shadow: var(--shadow-strong);
+    border: 1px solid var(--panel-border-color);
+    -webkit-backdrop-filter: var(--backdrop-filter-glass);
+    backdrop-filter: var(--backdrop-filter-glass);
+    opacity: 0;
+    transform: translateX(100%);
+    animation: slideInToast 0.5s forwards;
+    font-size: 0.95em;
+    line-height: 1.4;
+    position: relative;
+    overflow: hidden; /* For pseudo-elements or progress bar */
+}
+
+.toast::before { /* Glow accent on the side */
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    background-color: var(--primary-glow-color);
+    box-shadow: 0 0 8px var(--primary-glow-color);
+}
+
+.toast.success::before { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
+.toast.error::before { background-color: var(--danger-color); box-shadow: 0 0 8px var(--danger-color); }
+/* .toast.warning::before { background-color: var(--warning-color); box-shadow: 0 0 8px var(--warning-color); } */
+/* .toast.info::before { background-color: var(--primary-glow-color); box-shadow: 0 0 8px var(--primary-glow-color); } */
+
+
+.toast.success { /* No need to change text color if bg is transparent enough */
+    /* border-left: 5px solid var(--success-color); */
+}
+.toast.error {
+    /* border-left: 5px solid var(--danger-color); */
+}
+
+@keyframes slideInToast {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Copy Button Specifics (if different from general button) */
+#copy-btn {
+    /* Uses general button styles */
+}
+#copy-btn.copied {
+    background: linear-gradient(145deg, rgba(0, 255, 170, 0.2), rgba(0, 200, 130, 0.15)); /* Success color gradient */
+    border-color: var(--success-color);
+    color: #fff; /* Ensure text is bright */
+    box-shadow: 0 0 10px var(--success-color), 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+#copy-btn.copied:hover {
+    box-shadow: 0 0 15px var(--success-color), 0 3px 7px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+
