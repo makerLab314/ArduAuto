@@ -61,9 +61,34 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
     min-height: 400px;
     padding: 1rem;
     transition: background-color 0.3s, border-color 0.3s;
+    background-image: url('https://9to5mac.com/wp-content/uploads/sites/6/2025/06/macOS_26_Dark.jpg?quality=82&strip=all&w=1024');
+    background-size: cover; /* Cover the entire area */
+    background-position: center; /* Center the image */
+    background-repeat: no-repeat; /* Do not repeat the image */
+    position: relative; /* Needed for pseudo-element overlay */
 }
-#programm-ablauf:empty::before, .nested-dropzone:empty::before { /* Angepasst */
-    content: "Ziehe Bausteine hierher";
+
+/* Add a semi-transparent overlay to make blocks/text more readable */
+#programm-ablauf::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3); /* Dark overlay, adjust opacity as needed */
+    border-radius: var(--border-radius); /* Match parent's border radius */
+    z-index: 0; /* Ensure it's behind the content but above the background image */
+}
+
+/* Ensure direct children (blocks and empty placeholder) are above the overlay */
+#programm-ablauf > *, #programm-ablauf:empty::after {
+    position: relative;
+    z-index: 1;
+}
+
+#programm-ablauf:empty::after { /* Changed from ::before to ::after to avoid conflict with overlay */
+    content: "Ziehe Bausteine hierher oder lade ein Beispiel"; /* Keep specific message for main dropzone */
     display: flex;
     min-height: 50px; /* Angepasst */
     height: 100%;
@@ -122,7 +147,19 @@ h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; marg
     padding: 10px;
     margin-top: 4px;
 }
-.nested-dropzone:empty::before { color: #5a76a5; } /* Ensure placeholder text is visible */
+.nested-dropzone:empty::before {
+    content: "Ziehe Bausteine hierher";
+    display: flex;
+    min-height: 50px;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    color: #5a76a5; /* Adjusted color for dark mode */
+    font-style: italic;
+    font-size: 0.9em;
+    position: relative; /* Ensure it's not obscured if parent has z-index manipulations */
+    z-index: 1;
+}
 
 
 /* Stile für Inputs */
@@ -182,63 +219,90 @@ pre[class*="language-"] { margin: 0; border-radius: 0 0 var(--border-radius) var
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: 50%;
-    box-shadow: var(--shadow);
+    box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1), var(--shadow); /* Added subtle inset shadow */
     display: none; /* Hidden by default */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 1001; /* Above other elements */
     user-select: none; /* Prevent text selection during drag */
-    backdrop-filter: blur(15px); /* Increased blur radius */
-    background-color: rgba(30, 30, 30, 0.75); /* Semi-transparent background for blur */
+    backdrop-filter: blur(18px) saturate(120%); /* Increased blur, added subtle saturation */
+    background-color: rgba(40, 40, 40, 0.65); /* Adjusted transparency and lightness */
+    /* Ensure popup is centered if it's not already by flex display */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.time-slider-track {
-    position: absolute;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    border: 10px solid #69a0e8; /* Lighter shade of --primary-color (was --primary-color-light) */
-    box-sizing: border-box;
-    /* Ensure markers are drawn on top of the track border but below the thumb */
+.time-slider-svg {
+    /* SVG itself doesn't need much styling if children are styled */
+    position: absolute; /* Position it absolutely to allow text to naturally center via flex on parent */
+    top: 0;
+    left: 0;
+    width: 100%; /* Fill parent popup */
+    height: 100%;
+    overflow: visible;
 }
 
+.time-slider-track-path {
+    fill: none;
+    stroke: #5a8cd8; /* From old .time-slider-track border */
+    stroke-width: 10px; /* From old .time-slider-track border */
+    /* The radial gradient from old .time-slider-track cannot be directly applied to a path stroke.
+       If needed, it would require SVG filters or a filled path shape.
+       For now, keeping it simple. The popup's backdrop-filter gives the main glass effect. */
+}
+
+.time-slider-thumb-visual {
+    fill: var(--primary-color);
+    stroke: white;
+    stroke-width: 3px;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.time-slider-thumb-visual.flushing {
+    opacity: 0;
+    transform: scale(0.3);
+    /* transition-duration is inherited or can be set specifically if different */
+}
+
+/* Markers are now direct children of time-slider-popup */
 .time-slider-marker {
-    position: absolute;
-    background-color: var(--text-color); /* Or a specific marker color */
-    transform-origin: 0 50%; /* Rotate around the edge connected to the center */
-    z-index: 1; /* Below thumb (thumb is implicitly higher or set explicitly) */
+    position: absolute; /* Positioning is relative to time-slider-popup */
+    /* background-color: var(--text-color); Removed, as child span will have color */
+    transform-origin: 0 50%; /* This is for the parent div's rotation */
+    z-index: 2;
+}
+
+.time-slider-marker .marker-line {
+    display: block;
+    width: 100%; /* Takes width from parent .time-slider-marker (.zero or .half-second) */
+    height: 100%; /* Takes height from parent */
+    background-color: var(--text-color);
+    transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* Smooth transition for bump effect */
+    transform-origin: center bottom; /* Scale/translate from bottom center for a "growing" effect */
+}
+
+.time-slider-marker.bumping .marker-line {
+    transform: scaleY(1.5) translateY(-2px); /* Scale vertically and shift slightly for emphasis */
 }
 
 .time-slider-marker.zero {
-    height: 15px; /* Larger marker for zero */
-    width: 3px;
+    /* height: 15px; width: 3px; Defined in JS for setup, could be here too */
 }
 
 .time-slider-marker.half-second {
-    height: 8px; /* Smaller marker for 0.5s intervals */
-    width: 1px;
+    /* height: 8px; width: 1px; Defined in JS for setup */
 }
 
-
-.time-slider-thumb {
-    position: absolute;
-    width: 30px; /* Increased size */
-    height: 30px; /* Increased size */
-    background-color: var(--primary-color);
-    border-radius: 50%;
-    transform-origin: 50% 50%;
-    cursor: pointer;
-    border: 3px solid white; /* Adjusted border for new size */
-    box-sizing: border-box;
-    /* Thumb will be positioned by JavaScript based on the center of the slider */
-}
-
+/* Center text is also a direct child of the popup */
 .time-slider-center-text {
     font-family: 'Fira Code', monospace;
     font-size: 1.5em;
     color: var(--text-color);
     text-align: center;
+    position: relative; /* To ensure it's rendered by flex and can have z-index */
+    z-index: 3; /* Above SVG elements and markers */
 }
 
 .time-slider-center-text span {

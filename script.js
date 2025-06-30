@@ -483,146 +483,122 @@ ${loopCode}
     initTimeSlider() {
         if (!this.timeSliderElement) {
             this.timeSliderElement = document.createElement('div');
-            this.timeSliderElement.className = 'time-slider-popup';
+            this.timeSliderElement.className = 'time-slider-popup'; // Stays 200x200
+
+            // New SVG structure
             this.timeSliderElement.innerHTML = `
-                <div class="time-slider-track">
-                    <!-- Markers will be added here by JS -->
-                </div>
-                <div class="time-slider-thumb"></div>
+                <svg class="time-slider-svg" viewBox="0 0 200 200" width="200" height="200">
+                    <path class="time-slider-track-path" fill="none" stroke-linecap="round"></path>
+                    <circle class="time-slider-thumb-visual" r="7" style="cursor: grab;"></circle>
+                </svg>
                 <div class="time-slider-center-text">
                     0.00 <span>seconds</span>
                 </div>
             `;
             document.body.appendChild(this.timeSliderElement);
-            this.timeSliderThumb = this.timeSliderElement.querySelector('.time-slider-thumb');
-            this.timeSliderText = this.timeSliderElement.querySelector('.time-slider-center-text');
-            const trackElement = this.timeSliderElement.querySelector('.time-slider-track');
 
-            // Add markers
-            const maxValue = 60; // Max seconds for one full circle
-            const trackRadius = 90; // Outer radius of the track div (180px / 2)
-            const trackBorderWidth = 10; // As defined in CSS for .time-slider-track border
-            // Effective radius for marker placement (center of the visible track border)
-            const markerPlacementRadius = trackRadius - (trackBorderWidth / 2);
+            this.svgEl = this.timeSliderElement.querySelector('.time-slider-svg');
+            this.trackPathEl = this.timeSliderElement.querySelector('.time-slider-track-path');
+            this.thumbVisualEl = this.timeSliderElement.querySelector('.time-slider-thumb-visual');
+            this.timeSliderText = this.timeSliderElement.querySelector('.time-slider-center-text');
+
+            // Store SVG center and radii for path/thumb calculations
+            this.svgViewBoxSize = 200;
+            this.svgCenter = this.svgViewBoxSize / 2; // 100
+            this.trackOuterRadius = 90;
+            this.trackStrokeWidth = 10; // This will be set in CSS
+            this.trackEffectiveRadius = this.trackOuterRadius - (this.trackStrokeWidth / 2); // 85 - for path generation and thumb travel
+
+            // Initial static track path drawing (simple circle ring)
+            this.drawStaticTrackPath();
+
+            // Initial thumb positioning (e.g., at 0 seconds / 12 o'clock)
+            this.updateThumbVisualPosition(0);
+
+            // Marker creation - now append to this.timeSliderElement (the popup)
+            const maxValue = 60;
+            const markerPlacementRadius = this.trackEffectiveRadius;
 
             for (let s = 0; s < maxValue; s += 0.5) {
                 const marker = document.createElement('div');
                 const isZeroMark = (s === 0);
                 marker.className = 'time-slider-marker ' + (isZeroMark ? 'zero' : 'half-second');
-
-                const angleDeg = (s / maxValue * 360) - 90; // -90 to make 0s at 12 o'clock
-
-                // The marker's own height is its length (15px for zero, 8px for half-second)
-                // The marker's own width is its thickness (3px for zero, 1px for half-second)
+                const angleDeg = (s / maxValue * 360) - 90;
                 const markerLength = isZeroMark ? 15 : 8;
                 const markerThickness = isZeroMark ? 3 : 1;
-
-                // Style the marker itself (size is from CSS, but we need for calculations)
                 marker.style.width = `${markerThickness}px`;
                 marker.style.height = `${markerLength}px`;
 
-                // Position the marker's top-left corner at the center of the track element.
-                // Then use transforms to move and rotate it.
-                // The trackElement is 180x180. Its center is (90,90).
-                // The popup is 200x200. Its center is (100,100). Markers are added to trackElement.
-                marker.style.position = 'absolute';
-                marker.style.left = `calc(50% - ${markerThickness / 2}px)`; // Center the marker horizontally
-                marker.style.top = `calc(50% - ${markerLength / 2}px)`;   // Center the marker vertically
-
-                // Now, apply transforms:
-                // 1. Rotate it to the correct angle.
-                // 2. Translate it outwards along its new Y-axis (which was its original Y-axis before rotation)
-                //    by `markerPlacementRadius`.
-                // The CSS transform-origin for .time-slider-marker is `0 50%` (left edge, vertical center).
-                // Let's change it or work with it.
-                // If we use `transform-origin: center center` for the marker itself:
-                marker.style.transformOrigin = 'center center';
-                // Translate its center to the markerPlacementRadius, then rotate.
-                // translateY pushes it "up" relative to its own orientation.
-                // We want to push it radially from the main circle's center.
-
-                // Simpler:
-                // 1. Place marker at center of track div.
-                // 2. Set its transform-origin to `center bottom` (center of its bottom edge).
-                // 3. Translate it UP by `markerPlacementRadius`. This puts its bottom edge on the circle.
-                // 4. Rotate it by `angleDeg`.
-                marker.style.transformOrigin = `${markerThickness/2}px ${markerLength}px`; // Center bottom
-                marker.style.transform = `translate(0, -${markerPlacementRadius}px) rotate(${angleDeg}deg)`;
-
-                // The above is if the marker was "standing up" and we moved its base.
-                // Our CSS has transform-origin: 0 50% (left side, vertical middle of the line)
-                // And the marker's "length" is its CSS height.
-                // Let's use the CSS defined origin.
-                // marker.style.left = '50%'; // Place left edge at horizontal center
-                // marker.style.top = `calc(50% - ${markerThickness / 2}px)`; // Vertically center its thickness
-                // marker.style.transform = `translateX(${markerPlacementRadius}px) rotate(${angleDeg}deg)`;
-                // This should rotate around the point (50%, 50% of its own height)
-                // and that point should be on the markerPlacementRadius circle.
-
-                // Recalculate with CSS origin `0 50%` (left edge, vertical center of the line)
-                // The marker has width (thickness) and height (length).
-                // We want the point (0, markerLength/2) of the marker to be at `markerPlacementRadius` at `angleDeg`.
-                const originXOffset = 0; // from its own left
-                const originYOffset = markerLength / 2; // from its own top
-
-                // Calculate position for the marker's top-left corner
-                const rotationRad = angleDeg * Math.PI / 180;
-                const markerTopLeftX = (trackElement.offsetWidth / 2) + markerPlacementRadius * Math.cos(rotationRad) - originXOffset * Math.cos(rotationRad) + originYOffset * Math.sin(rotationRad);
-                const markerTopLeftY = (trackElement.offsetHeight / 2) + markerPlacementRadius * Math.sin(rotationRad) - originYOffset * Math.cos(rotationRad) - originXOffset * Math.sin(rotationRad);
-
-                marker.style.left = `${markerTopLeftX - markerThickness/2}px`; // Adjust because origin is left, but visually we want center of thickness
-                marker.style.top = `${markerTopLeftY}px`; // This is the top for the origin point.
-                // This is getting complicated. Let's use absolute positioning and direct rotation.
-
-                // Final simplified marker positioning:
-                // Markers are children of .time-slider-track (180x180). Center is (90,90).
-                // CSS for marker: position:absolute, transform-origin: 0 50% (left edge, vertical center)
-                // The marker's visual "line" is its height.
-                // We want the marker's origin point to sit on the `markerPlacementRadius` circle.
-                // And the marker should be rotated to be radial.
-
-                const finalAngleDeg = angleDeg + 90; // Add 90 because line is vertical (height), rotation is from horizontal X-axis
-
-                // Position the marker's origin point (its left-center)
-                const originX = (trackElement.offsetWidth / 2) + markerPlacementRadius * Math.cos(finalAngleDeg * Math.PI / 180);
-                const originY = (trackElement.offsetHeight / 2) + markerPlacementRadius * Math.sin(finalAngleDeg * Math.PI / 180);
-
-                // Set the marker's top-left based on its origin
-                // marker.style.left = `${originX}px`; // This is where its left edge should be
-                // marker.style.top = `${originY - (markerLength / 2)}px`; // Adjust for vertical centering of origin
-
-                // Correct approach: Position the div, then rotate it.
-                // Div is `markerThickness` wide, `markerLength` high.
-                // Place its top-left corner.
-                // The line should extend inwards/outwards from the `markerPlacementRadius`.
-                // Let's say marker line is centered on `markerPlacementRadius`.
-                const lineCenterX = (trackElement.offsetWidth / 2) + markerPlacementRadius * Math.cos(angleDeg * Math.PI / 180);
-                const lineCenterY = (trackElement.offsetHeight / 2) + markerPlacementRadius * Math.sin(angleDeg * Math.PI / 180);
-
+                const lineCenterX = this.svgCenter + markerPlacementRadius * Math.cos(angleDeg * Math.PI / 180);
+                const lineCenterY = this.svgCenter + markerPlacementRadius * Math.sin(angleDeg * Math.PI / 180);
                 marker.style.left = `${lineCenterX - markerThickness / 2}px`;
                 marker.style.top = `${lineCenterY - markerLength / 2}px`;
-                marker.style.transform = `rotate(${angleDeg + 90}deg)`; // +90 because line is vertical, rotate around its center
+                // Rotation is now applied to the marker div itself
+                marker.style.transform = `rotate(${angleDeg + 90}deg)`;
 
-                trackElement.appendChild(marker);
+                // Store the marker's own objective angle (0 @ 3 o'clock) for proximity checks
+                const mathAngleRad = ((angleDeg + 90) * Math.PI / 180); // Convert visual angle back to math angle
+                marker.dataset.angleRad = mathAngleRad;
+
+                const markerLine = document.createElement('span');
+                markerLine.className = 'marker-line';
+                marker.appendChild(markerLine);
+
+                this.timeSliderElement.appendChild(marker); // Append to popup
             }
 
-            this.timeSliderThumb.addEventListener('mousedown', (e) => {
-                this.isDraggingSlider = true;
-                this.timeSliderThumb.style.cursor = 'grabbing';
-                // Prevent text selection while dragging
+            // Event listeners:
+            this.thumbVisualEl.addEventListener('mousedown', (e) => {
+                if (this.isAnimatingFlush) return; // Prevent re-triggering if animation in progress
+
+                this.isDraggingSlider = true; // Indicates drag interaction has started
+                this.thumbVisualEl.style.cursor = 'grabbing';
+
+                // 1. Trigger thumb visual disappearance
+                this.thumbVisualEl.classList.add('flushing');
+
+                // 2. Determine bump angle from click (relative to SVG center)
+                // This logic will be similar to handleSliderDrag's angle calculation
+                const svgRect = this.svgEl.getBoundingClientRect();
+                const clickX = e.clientX - svgRect.left;
+                const clickY = e.clientY - svgRect.top;
+                const deltaX = clickX - this.svgCenter;
+                const deltaY = clickY - this.svgCenter;
+                let angleRad = Math.atan2(deltaY, deltaX); // Angle from SVG center in radians
+                // angleRad is currently 0 at 3 o'clock. Adjust to 0 at 12 o'clock for consistency.
+                // angleRad = angleRad + Math.PI / 2; // This would make 0 at 6 o'clock if not careful
+                // No, this atan2 is fine. We convert to degrees and adjust later if needed by generateBumpedPathD.
+
+                // 3. Start track path deformation animation
+                this.animateTrackToBump(angleRad, 200); // 200ms duration
+
                 e.preventDefault();
             });
 
             document.addEventListener('mousemove', (e) => {
-                if (!this.isDraggingSlider || !this.currentTimeInput) return;
+                // No change, but ensure it only calls handleSliderDrag if this.isDraggingSlider is true
+                // and potentially if this.isThumbFlushed is true.
+                if (!this.isDraggingSlider || !this.currentTimeInput || !this.isThumbFlushed) return;
                 this.handleSliderDrag(e);
             });
 
             document.addEventListener('mouseup', (e) => {
                 if (this.isDraggingSlider) {
                     this.isDraggingSlider = false;
-                    this.timeSliderThumb.style.cursor = 'pointer';
-                    // Optional: Snap to a value or finalize
+                    if (this.thumbVisualEl) this.thumbVisualEl.style.cursor = 'pointer';
+
+                    if (this.isThumbFlushed) {
+                        // Calculate final value from this.currentBumpAngleRad for thumb positioning
+                        let finalDisplayAngleDeg = (this.currentBumpAngleRad * 180 / Math.PI);
+                        finalDisplayAngleDeg = (finalDisplayAngleDeg + 90 + 360) % 360;
+                        const finalValue = parseFloat(((finalDisplayAngleDeg / 360) * 60).toFixed(2));
+
+                        this.updateThumbVisualPosition(finalValue); // Position it for reveal
+                        this.thumbVisualEl.classList.remove('flushing');
+                        this.animateTrackToStatic(200); // 200ms duration
+                    }
+                    // Clear any bumping classes from markers
+                    this.timeSliderElement.querySelectorAll('.time-slider-marker.bumping').forEach(m => m.classList.remove('bumping'));
                 }
             });
 
@@ -637,11 +613,145 @@ ${loopCode}
         }
     },
 
-    showTimeSlider(inputElement) {
-        this.initTimeSlider(); // Ensure it's created
-        this.currentTimeInput = inputElement;
-        const rect = inputElement.getBoundingClientRect();
+    // Method to draw the static circular track path
+    drawStaticTrackPath() {
+        if (!this.trackPathEl) return;
+        // Describes a circle path for the stroke to be applied on
+        // Path: Move to top of circle, Arc to almost same spot to make a full circle
+        const radius = this.trackEffectiveRadius;
+        const center = this.svgCenter;
+        // M x,y A rx,ry x-axis-rotation large-arc-flag sweep-flag x,y
+        const d = `M ${center},${center - radius} A ${radius},${radius} 0 1 1 ${center - 0.01},${center - radius} Z`;
+        this.trackPathEl.setAttribute('d', d);
+    },
 
+    // Method to update the visual thumb's position
+    updateThumbVisualPosition(seconds) {
+        if (!this.thumbVisualEl || typeof seconds !== 'number') return;
+        const maxValue = 60;
+        // Calculate angle: 0 seconds = -PI/2 (12 o'clock)
+        const angleRad = ((seconds % maxValue) / maxValue * 2 * Math.PI) - (Math.PI / 2);
+
+        const x = this.svgCenter + this.trackEffectiveRadius * Math.cos(angleRad);
+        const y = this.svgCenter + this.trackEffectiveRadius * Math.sin(angleRad);
+
+        this.thumbVisualEl.setAttribute('cx', String(x));
+        this.thumbVisualEl.setAttribute('cy', String(y));
+    },
+
+    generateBumpedPathD(bumpAngleRad, currentAmplitude, bumpWidthRad = Math.PI / 4) {
+        if (!this.trackPathEl) return "";
+        const points = [];
+        const numSegments = 72; // e.g., every 5 degrees
+        const baseRadius = this.trackEffectiveRadius; // 85px
+
+        for (let i = 0; i <= numSegments; i++) {
+            const segmentAngleRad = (i / numSegments) * 2 * Math.PI;
+
+            let R = baseRadius;
+            // Calculate angular distance to bump center (handle wrapping)
+            let angleDiff = segmentAngleRad - bumpAngleRad;
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+            if (Math.abs(angleDiff) < bumpWidthRad) {
+                // Cosine bell shape for the bump
+                const normalizedDistance = Math.abs(angleDiff) / bumpWidthRad; // 0 at center, 1 at edge of bump
+                const radialOffset = currentAmplitude * Math.pow(Math.cos(normalizedDistance * Math.PI / 2), 2);
+                R += radialOffset;
+            }
+
+            const x = this.svgCenter + R * Math.cos(segmentAngleRad - Math.PI / 2); // Adjust for 12 o'clock start
+            const y = this.svgCenter + R * Math.sin(segmentAngleRad - Math.PI / 2); // Adjust for 12 o'clock start
+            points.push(`${x},${y}`);
+        }
+        return `M ${points[0]} L ${points.slice(1).join(' L ')} Z`;
+    },
+
+    animateTrackToBump(targetAngleRad, duration) {
+        if (!this.trackPathEl) return;
+        this.isAnimatingFlush = true;
+        const startTime = performance.now();
+        const startAmplitude = 0; // Assuming bump starts from nothing
+        const endAmplitude = 8; // Max bump height in pixels, adjust as needed
+        this.currentBumpAngleRad = targetAngleRad; // Store for dragging
+
+        const animateStep = (currentTime) => {
+            const elapsedTime = currentTime - startTime;
+            let progress = Math.min(elapsedTime / duration, 1);
+            // Simple ease-out: 1 - Math.pow(1 - progress, 3)
+            progress = 1 - Math.pow(1 - progress, 3);
+
+
+            const currentAmplitude = startAmplitude + (endAmplitude - startAmplitude) * progress;
+            const d = this.generateBumpedPathD(targetAngleRad, currentAmplitude);
+            this.trackPathEl.setAttribute('d', d);
+
+            if (progress < 1) {
+                requestAnimationFrame(animateStep);
+            } else {
+                this.isAnimatingFlush = false;
+                this.isThumbFlushed = true; // State to indicate bump is active
+                 // Store final amplitude if needed for dragging
+                this.currentBumpAmplitude = endAmplitude;
+            }
+        };
+        requestAnimationFrame(animateStep);
+    },
+
+    animateTrackToStatic(duration) {
+        if (!this.trackPathEl || typeof this.currentBumpAmplitude === 'undefined' || this.currentBumpAmplitude === 0) {
+            this.isThumbFlushed = false; // Ensure state is correct even if no animation runs
+            return;
+        }
+        this.isAnimatingFlush = true; // Use the same flag to prevent conflicting animations
+        const startTime = performance.now();
+        const startAmplitude = this.currentBumpAmplitude;
+        const endAmplitude = 0;
+        // Use the last known bump angle for the path deformation as it flattens
+        const bumpAngleForAnimation = this.currentBumpAngleRad;
+
+        const animateStep = (currentTime) => {
+            const elapsedTime = currentTime - startTime;
+            let progress = Math.min(elapsedTime / duration, 1);
+            // Simple ease-in-out: progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            // Or use the same ease-out as the flush:
+            progress = 1 - Math.pow(1 - progress, 3);
+
+
+            const currentAmplitude = startAmplitude + (endAmplitude - startAmplitude) * progress;
+            const d = this.generateBumpedPathD(bumpAngleForAnimation, currentAmplitude);
+            this.trackPathEl.setAttribute('d', d);
+
+            if (progress < 1) {
+                requestAnimationFrame(animateStep);
+            } else {
+                // this.trackPathEl.setAttribute('d', this.generateBumpedPathD(bumpAngleForAnimation, 0)); // Ensure perfectly flat
+                this.drawStaticTrackPath(); // More reliable to return to the exact static path
+                this.isAnimatingFlush = false;
+                this.isThumbFlushed = false;
+                this.currentBumpAmplitude = 0;
+            }
+        };
+        requestAnimationFrame(animateStep);
+    },
+
+    showTimeSlider(inputElement) {
+        this.initTimeSlider(); // Ensures SVG structure is ready, calls drawStaticTrackPath and updateThumbVisualPosition(0)
+        this.currentTimeInput = inputElement;
+
+        // Reset to initial visual state before showing
+        this.isThumbFlushed = false;
+        this.isAnimatingFlush = false; // Reset animation lock
+        this.currentBumpAmplitude = 0; // No bump initially
+        if (this.thumbVisualEl) {
+            this.thumbVisualEl.classList.remove('flushing'); // Ensure thumb is visible
+        }
+        // Ensure track is drawn flat; initTimeSlider calls drawStaticTrackPath, but if re-showing, good to be sure.
+        this.drawStaticTrackPath();
+
+
+        const rect = inputElement.getBoundingClientRect();
         const sliderWidth = 200; // Width of .time-slider-popup
         const sliderHeight = 200; // Height of .time-slider-popup
 
@@ -667,7 +777,16 @@ ${loopCode}
 
         let value = parseFloat(String(inputElement.value).replace(',', '.')) || 0;
         if (value < 0) value = 0;
-        this.updateSliderFromValue(value);
+
+        this.updateSliderFromValue(value); // Update text display
+        this.updateThumbVisualPosition(value); // Position visible SVG thumb
+
+        // Set initial currentBumpAngleRad for state consistency if needed before first drag.
+        // The mousedown event calculates a fresh angle anyway for the flush animation.
+        const maxValue = 60;
+        let initialDisplayAngleDeg = (value / maxValue) * 360; // Angle in degrees, 0s at 0deg (maps to 12 o'clock)
+        // Convert this display/value angle to the Math angle (radians, 0 @ 3 o'clock)
+        this.currentBumpAngleRad = ((initialDisplayAngleDeg - 90 + 360) % 360) * Math.PI / 180;
     },
 
     hideTimeSlider() {
@@ -678,25 +797,17 @@ ${loopCode}
     },
 
     updateSliderFromValue(seconds) {
-        // Max value for slider, e.g., 60 seconds for a full circle
-        const maxValue = 60;
-        let angle = (seconds % maxValue) / maxValue * 360; // Angle in degrees
-
-        // Correct for 0 degrees being at 3 o'clock, we want 12 o'clock
-        angle = (angle - 90 + 360) % 360;
-
-
-        const thumbRadius = this.sliderRadius - 10; // Center of the track (180/2 - 10 border)
-        const x = thumbRadius * Math.cos(angle * Math.PI / 180);
-        const y = thumbRadius * Math.sin(angle * Math.PI / 180);
-
-        // Thumb position is relative to slider center (100,100 for a 200x200 slider)
-        // and thumb is 30x30, so offset by half its size (15) to center it.
-        this.timeSliderThumb.style.left = `${100 + x - 15}px`;
-        this.timeSliderThumb.style.top = `${100 + y - 15}px`;
+        // This function now primarily updates the text display.
+        // Visual thumb (SVG circle) is updated by updateThumbVisualPosition.
+        // Bumped track is updated by handleSliderDrag calling generateBumpedPathD.
+        if (!this.timeSliderText) return;
 
         const displaySeconds = seconds.toFixed(2);
         this.timeSliderText.innerHTML = `${displaySeconds} <span>seconds</span>`;
+
+        // The part that updated the old div thumb is removed.
+        // this.timeSliderThumb.style.left = ...
+        // this.timeSliderThumb.style.top = ...
 
         if (this.currentTimeInput) {
              // Update input field if it's not already the source of this change
@@ -707,47 +818,90 @@ ${loopCode}
     },
 
     handleSliderDrag(event) {
-        const sliderRect = this.timeSliderElement.getBoundingClientRect();
-        const centerX = sliderRect.left + sliderRect.width / 2;
-        const centerY = sliderRect.top + sliderRect.height / 2;
+        if (!this.isDraggingSlider || !this.timeSliderElement || !this.isThumbFlushed) return;
+
+        const sliderRect = this.svgEl.getBoundingClientRect(); // Use SVG rect
+        const centerX = sliderRect.left + this.svgCenter;
+        const centerY = sliderRect.top + this.svgCenter;
 
         const deltaX = event.clientX - centerX;
         const deltaY = event.clientY - centerY;
+        let angleRad = Math.atan2(deltaY, deltaX); // Radians, 0 @ 3 o'clock
 
-        let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // Angle in degrees
-        angle = (angle + 90 + 360) % 360; // Adjust so 0 degrees is at 12 o'clock
+        // Update track path with new bump position
+        this.currentBumpAngleRad = angleRad;
+        if (typeof this.currentBumpAmplitude === 'undefined') { // Safety for if flush hasn't fully set amplitude
+            this.currentBumpAmplitude = 8; // Default from animateTrackToBump
+        }
+        const newPathD = this.generateBumpedPathD(this.currentBumpAngleRad, this.currentBumpAmplitude);
+        if (this.trackPathEl) this.trackPathEl.setAttribute('d', newPathD);
 
-        const maxValue = 60; // Max seconds for one full circle
-        let value = (angle / 360) * maxValue;
+        // Convert angle to slider value (0-60 seconds) for snapping and display
+        let displayAngleDeg = (angleRad * 180 / Math.PI); // Convert to degrees
+        displayAngleDeg = (displayAngleDeg + 90 + 360) % 360; // Shift origin to 12 o'clock for value calc
 
-        // Add support for multiple rotations if needed, or cap at maxValue
-        // For now, simple 0-60 seconds mapping
+        const maxValue = 60;
+        let value = (displayAngleDeg / 360) * maxValue;
 
         // Snapping logic
-        const snapInterval = 0.5; // Snap every 0.5 seconds
-        const zeroSnapThreshold = 0.25; // Larger threshold for snapping to 0
+        const snapInterval = 0.5;
+        const zeroSnapThreshold = 0.25;
 
+        let snapped = false;
         if (value < zeroSnapThreshold || value > maxValue - zeroSnapThreshold) {
             value = 0;
+            snapped = true;
         } else {
+            const originalValue = value;
             value = Math.round(value / snapInterval) * snapInterval;
+            if (value !== originalValue) snapped = true;
+        }
+        value = parseFloat(value.toFixed(2));
+
+        // If snapped, update the bump's visual angle to the snapped angle
+        if (snapped) {
+            let newDisplayAngleDegForSnap = (value / maxValue) * 360;
+            // Convert this display angle (0 @ 12 o'clock) back to Math angle (0 @ 3 o'clock) for generateBumpedPathD
+            this.currentBumpAngleRad = ((newDisplayAngleDegForSnap - 90) * Math.PI / 180);
+            const snappedPathD = this.generateBumpedPathD(this.currentBumpAngleRad, this.currentBumpAmplitude);
+            if (this.trackPathEl) this.trackPathEl.setAttribute('d', snappedPathD);
         }
 
-        value = parseFloat(value.toFixed(2)); // Ensure two decimal places
-
-        this.updateSliderFromValue(value);
+        this.updateSliderFromValue(value); // Update text display
 
         // Update the input field directly
         if (this.currentTimeInput) {
             const blockId = this.currentTimeInput.closest('.programm-block')?.dataset.id;
             if (blockId) {
-                // We call updateBlockValue which will also save to history
                 this.updateBlockValue(blockId, value.toString().replace('.', ','));
             } else {
-                 // Fallback if no blockId (e.g. if slider used elsewhere)
                 this.currentTimeInput.value = value.toString().replace('.', ',');
             }
         }
+
+        // Indicator line animation logic
+        const bumpInfluenceWidthRad = Math.PI / 8; // Angular width of bump's influence (reduced for more localized reaction)
+
+        this.timeSliderElement.querySelectorAll('.time-slider-marker').forEach(markerEl => {
+            const markerAngleRadStored = markerEl.dataset.angleRad;
+            if (typeof markerAngleRadStored === 'undefined') return;
+            const markerAngleRad = parseFloat(markerAngleRadStored);
+
+            let angleDiff = this.currentBumpAngleRad - markerAngleRad;
+            // Normalize angle difference to be between -PI and PI
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+            if (Math.abs(angleDiff) < (bumpInfluenceWidthRad / 2)) {
+                if (!markerEl.classList.contains('bumping')) {
+                    markerEl.classList.add('bumping');
+                }
+            } else {
+                if (markerEl.classList.contains('bumping')) {
+                    markerEl.classList.remove('bumping');
+                }
+            }
+        });
     },
 
     copyCode() {
