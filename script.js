@@ -449,7 +449,23 @@ ${loopCode}
     },
 
     // --- Hilfsfunktionen (unverändert) ---
-    copyCode() { /* ... unverändert von der letzten Version ... */ },
+    copyCode() {
+        const codeToCopy = this.els.codeOutput.textContent;
+        navigator.clipboard.writeText(codeToCopy).then(() => {
+            const originalButtonText = this.els.copyBtn.innerHTML;
+            this.els.copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Kopiert!</span>';
+            this.els.copyBtn.classList.add('copied');
+            this.showToast('Code in die Zwischenablage kopiert!', 'success');
+
+            setTimeout(() => {
+                this.els.copyBtn.innerHTML = originalButtonText;
+                this.els.copyBtn.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Fehler beim Kopieren des Codes: ', err);
+            this.showToast('Fehler beim Kopieren.', 'error');
+        });
+    },
     showToast(message, type = 'info') { /* ... unverändert ... */ }
 };
 
