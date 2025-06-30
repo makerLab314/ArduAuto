@@ -263,6 +263,12 @@ const RoboProgrammer = {
             this.saveToHistory();
             // Nur Code neu generieren, kein komplettes UI-Update nötig
             this.generateCode();
+
+            // If the slider is active and corresponds to this block, update it
+            if (this.currentTimeInput && this.currentTimeInput.closest('.programm-block')?.dataset.id === blockId) {
+                const numericValue = parseFloat(String(value).replace(',', '.')) || 0;
+                this.updateSliderFromValue(numericValue);
+            }
         }
     },
 
@@ -327,6 +333,22 @@ const RoboProgrammer = {
                     input.classList.toggle('invalid', isNaN(num) || num < 0);
                 }
             });
+
+            // Show time slider on click for relevant inputs
+            if (input.classList.contains('warten-input') && (block.type === 'warten' /*|| block.type === 'another_time_block'*/)) {
+                input.addEventListener('click', (e) => {
+                    // Prevent click from propagating to document listener if slider is already open for this input
+                    if (this.timeSliderElement && this.timeSliderElement.style.display === 'flex' && this.currentTimeInput === e.target) {
+                        // Potentially allow click on input to also close, or do nothing
+                        // For now, let document click handle closing if it's not this input.
+                        return;
+                    }
+                    this.showTimeSlider(e.target);
+                });
+                input.addEventListener('focus', (e) => { // Also show on focus for accessibility / keyboard nav
+                    this.showTimeSlider(e.target);
+                });
+            }
         }
         
         // Wenn es ein If/Else-Block ist, initialisiere seine inneren Dropzones
@@ -449,6 +471,159 @@ ${loopCode}
     },
 
     // --- Hilfsfunktionen (unverändert) ---
+
+    // --- Time Slider Logic ---
+    currentTimeInput: null, // Reference to the input field being edited
+    timeSliderElement: null,
+    timeSliderThumb: null,
+    timeSliderText: null,
+    isDraggingSlider: false,
+    sliderRadius: 90, // half of track width (180px / 2) - thumb/border considerations might adjust this
+
+    initTimeSlider() {
+        if (!this.timeSliderElement) {
+            this.timeSliderElement = document.createElement('div');
+            this.timeSliderElement.className = 'time-slider-popup';
+            this.timeSliderElement.innerHTML = `
+                <div class="time-slider-track"></div>
+                <div class="time-slider-thumb"></div>
+                <div class="time-slider-center-text">
+                    0.00 <span>seconds</span>
+                </div>
+            `;
+            document.body.appendChild(this.timeSliderElement);
+            this.timeSliderThumb = this.timeSliderElement.querySelector('.time-slider-thumb');
+            this.timeSliderText = this.timeSliderElement.querySelector('.time-slider-center-text');
+
+            this.timeSliderThumb.addEventListener('mousedown', (e) => {
+                this.isDraggingSlider = true;
+                this.timeSliderThumb.style.cursor = 'grabbing';
+                // Prevent text selection while dragging
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!this.isDraggingSlider || !this.currentTimeInput) return;
+                this.handleSliderDrag(e);
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (this.isDraggingSlider) {
+                    this.isDraggingSlider = false;
+                    this.timeSliderThumb.style.cursor = 'pointer';
+                    // Optional: Snap to a value or finalize
+                }
+            });
+
+            // Close slider if clicked outside
+            document.addEventListener('click', (e) => {
+                if (this.timeSliderElement && this.timeSliderElement.style.display === 'flex') {
+                    if (!this.timeSliderElement.contains(e.target) && e.target !== this.currentTimeInput) {
+                        this.hideTimeSlider();
+                    }
+                }
+            });
+        }
+    },
+
+    showTimeSlider(inputElement) {
+        this.initTimeSlider(); // Ensure it's created
+        this.currentTimeInput = inputElement;
+        const rect = inputElement.getBoundingClientRect();
+
+        // Position slider near the input. Adjust as needed.
+        let top = rect.bottom + window.scrollY + 10;
+        let left = rect.left + window.scrollX;
+
+        // Basic boundary detection (so it doesn't go off-screen)
+        if (top + 200 > window.innerHeight + window.scrollY) {
+            top = rect.top + window.scrollY - 200 - 10;
+        }
+        if (left + 200 > window.innerWidth + window.scrollX) {
+            left = window.innerWidth + window.scrollX - 200 - 10;
+        }
+        if (left < 0) left = 10;
+
+
+        this.timeSliderElement.style.top = `${top}px`;
+        this.timeSliderElement.style.left = `${left}px`;
+        this.timeSliderElement.style.display = 'flex';
+
+        let value = parseFloat(String(inputElement.value).replace(',', '.')) || 0;
+        if (value < 0) value = 0;
+        this.updateSliderFromValue(value);
+    },
+
+    hideTimeSlider() {
+        if (this.timeSliderElement) {
+            this.timeSliderElement.style.display = 'none';
+        }
+        this.currentTimeInput = null;
+    },
+
+    updateSliderFromValue(seconds) {
+        // Max value for slider, e.g., 60 seconds for a full circle
+        const maxValue = 60;
+        let angle = (seconds % maxValue) / maxValue * 360; // Angle in degrees
+
+        // Correct for 0 degrees being at 3 o'clock, we want 12 o'clock
+        angle = (angle - 90 + 360) % 360;
+
+
+        const thumbRadius = this.sliderRadius - 10; // Center of the track (180/2 - 10 border)
+        const x = thumbRadius * Math.cos(angle * Math.PI / 180);
+        const y = thumbRadius * Math.sin(angle * Math.PI / 180);
+
+        // Thumb position is relative to slider center (100,100 for a 200x200 slider)
+        // and thumb is 20x20, so offset by half its size to center it.
+        this.timeSliderThumb.style.left = `${100 + x - 10}px`;
+        this.timeSliderThumb.style.top = `${100 + y - 10}px`;
+
+        const displaySeconds = seconds.toFixed(2);
+        this.timeSliderText.innerHTML = `${displaySeconds} <span>seconds</span>`;
+
+        if (this.currentTimeInput) {
+             // Update input field if it's not already the source of this change
+            if (parseFloat(String(this.currentTimeInput.value).replace(',', '.')) !== seconds) {
+                 this.currentTimeInput.value = displaySeconds.replace('.', ','); // Use comma for German locale
+            }
+        }
+    },
+
+    handleSliderDrag(event) {
+        const sliderRect = this.timeSliderElement.getBoundingClientRect();
+        const centerX = sliderRect.left + sliderRect.width / 2;
+        const centerY = sliderRect.top + sliderRect.height / 2;
+
+        const deltaX = event.clientX - centerX;
+        const deltaY = event.clientY - centerY;
+
+        let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // Angle in degrees
+        angle = (angle + 90 + 360) % 360; // Adjust so 0 degrees is at 12 o'clock
+
+        const maxValue = 60; // Max seconds for one full circle
+        let value = (angle / 360) * maxValue;
+
+        // Add support for multiple rotations if needed, or cap at maxValue
+        // For now, simple 0-60 seconds mapping
+
+        value = parseFloat(value.toFixed(2)); // Millisecond precision (2 decimal places)
+
+        this.updateSliderFromValue(value);
+
+        // Update the input field directly
+        if (this.currentTimeInput) {
+            const blockId = this.currentTimeInput.closest('.programm-block')?.dataset.id;
+            if (blockId) {
+                // We call updateBlockValue which will also save to history
+                this.updateBlockValue(blockId, value.toString().replace('.', ','));
+            } else {
+                 // Fallback if no blockId (e.g. if slider used elsewhere)
+                this.currentTimeInput.value = value.toString().replace('.', ',');
+            }
+        }
+    },
+
     copyCode() {
         const codeToCopy = this.els.codeOutput.textContent;
         navigator.clipboard.writeText(codeToCopy).then(() => {
