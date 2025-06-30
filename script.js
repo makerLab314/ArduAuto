@@ -256,18 +256,37 @@ const RoboProgrammer = {
         }
     },
 
-    updateBlockValue(blockId, value) {
+    updateBlockValue(blockId, value) { // Parameter 'value' is the new string value from input
         const result = this.findBlockAndParent(blockId);
-        if (result && result.block.value !== value) {
-            result.block.value = value;
+        if (result && result.block.value !== value) { // Check if actual change from model's current value
+            const oldValueString = result.block.value; // Model's current value before update
+            result.block.value = value; // Update state model with the new string value
             this.saveToHistory();
-            // Nur Code neu generieren, kein komplettes UI-Update nötig
             this.generateCode();
 
-            // If the slider is active and corresponds to this block, update it
-            if (this.currentTimeInput && this.currentTimeInput.closest('.programm-block')?.dataset.id === blockId) {
-                const numericValue = parseFloat(String(value).replace(',', '.')) || 0;
-                this.updateSliderFromValue(numericValue);
+            const newNumericValue = parseFloat(String(value).replace(',', '.')) || 0;
+            // Clamp or validate newNumericValue if needed. For now, assume it's valid (e.g. 0-60).
+            // const clampedNewValue = Math.max(0, Math.min(60, newNumericValue));
+
+
+            // If the time slider is visible AND it's for the block being changed:
+            if (this.timeSliderElement && this.timeSliderElement.style.display === 'flex' &&
+                this.currentTimeInput && this.currentTimeInput.closest('.programm-block')?.dataset.id === blockId) {
+
+                const oldValueNumeric = parseFloat(String(oldValueString).replace(',', '.')) || 0;
+                // Animate slider to this newNumericValue
+                this.animateSliderToValue(newNumericValue, oldValueNumeric, 300); // 300ms duration
+            } else if (this.currentTimeInput && this.currentTimeInput.closest('.programm-block')?.dataset.id === blockId) {
+                // Slider is for this block but not visible.
+                // If we simply call updateSliderFromValue, it updates text.
+                // If we call updateThumbVisualPosition, it moves the static thumb.
+                // This is probably fine, as it will be in the correct spot when next shown.
+                this.updateSliderFromValue(newNumericValue);
+                this.updateThumbVisualPosition(newNumericValue);
+                 // Also update internal angle state
+                const maxValue = 60;
+                let finalDisplayAngleDeg = (newNumericValue / maxValue) * 360;
+                this.currentBumpAngleRad = ((finalDisplayAngleDeg - 90 + 360) % 360) * Math.PI / 180;
             }
         }
     },
@@ -547,60 +566,72 @@ ${loopCode}
                 this.timeSliderElement.appendChild(marker); // Append to popup
             }
 
-            // Event listeners:
-            this.thumbVisualEl.addEventListener('mousedown', (e) => {
-                if (this.isAnimatingFlush) return; // Prevent re-triggering if animation in progress
+            // Helper to get coordinates for mouse and touch events
+            const getEventCoordinates = (ev) => {
+                if (ev.touches && ev.touches.length > 0) {
+                    return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+                }
+                return { x: ev.clientX, y: ev.clientY };
+            };
 
-                this.isDraggingSlider = true; // Indicates drag interaction has started
-                this.thumbVisualEl.style.cursor = 'grabbing';
+            const handleDragStart = (e) => {
+                // Allow only main mouse button for mousedown, or any touch for touchstart
+                if (e.type === 'mousedown' && e.button !== 0) return;
+                if (this.isAnimatingFlush) return;
 
-                // 1. Trigger thumb visual disappearance
-                this.thumbVisualEl.classList.add('flushing');
+                this.isDraggingSlider = true;
+                if (this.thumbVisualEl) this.thumbVisualEl.style.cursor = 'grabbing';
 
-                // 2. Determine bump angle from click (relative to SVG center)
-                // This logic will be similar to handleSliderDrag's angle calculation
+                const coords = getEventCoordinates(e);
                 const svgRect = this.svgEl.getBoundingClientRect();
-                const clickX = e.clientX - svgRect.left;
-                const clickY = e.clientY - svgRect.top;
+                const clickX = coords.x - svgRect.left;
+                const clickY = coords.y - svgRect.top;
                 const deltaX = clickX - this.svgCenter;
                 const deltaY = clickY - this.svgCenter;
-                let angleRad = Math.atan2(deltaY, deltaX); // Angle from SVG center in radians
-                // angleRad is currently 0 at 3 o'clock. Adjust to 0 at 12 o'clock for consistency.
-                // angleRad = angleRad + Math.PI / 2; // This would make 0 at 6 o'clock if not careful
-                // No, this atan2 is fine. We convert to degrees and adjust later if needed by generateBumpedPathD.
+                let angleRad = Math.atan2(deltaY, deltaX);
 
-                // 3. Start track path deformation animation
-                this.animateTrackToBump(angleRad, 200); // 200ms duration
+                this.animateTrackToBump(angleRad, 200);
 
-                e.preventDefault();
-            });
+                e.preventDefault(); // Important for touch to prevent scrolling/zooming
+            };
 
-            document.addEventListener('mousemove', (e) => {
-                // No change, but ensure it only calls handleSliderDrag if this.isDraggingSlider is true
-                // and potentially if this.isThumbFlushed is true.
+            const handleDocumentDrag = (e) => {
                 if (!this.isDraggingSlider || !this.currentTimeInput || !this.isThumbFlushed) return;
-                this.handleSliderDrag(e);
-            });
+                // Prevent scrolling during touch drag
+                if (e.type === 'touchmove') {
+                    e.preventDefault();
+                }
+                this.handleSliderDrag(getEventCoordinates(e)); // Pass extracted coords
+            };
 
-            document.addEventListener('mouseup', (e) => {
+            const handleDocumentDragEnd = (e) => {
                 if (this.isDraggingSlider) {
                     this.isDraggingSlider = false;
                     if (this.thumbVisualEl) this.thumbVisualEl.style.cursor = 'pointer';
 
                     if (this.isThumbFlushed) {
-                        // Calculate final value from this.currentBumpAngleRad for thumb positioning
                         let finalDisplayAngleDeg = (this.currentBumpAngleRad * 180 / Math.PI);
                         finalDisplayAngleDeg = (finalDisplayAngleDeg + 90 + 360) % 360;
                         const finalValue = parseFloat(((finalDisplayAngleDeg / 360) * 60).toFixed(2));
 
-                        this.updateThumbVisualPosition(finalValue); // Position it for reveal
-                        this.thumbVisualEl.classList.remove('flushing');
-                        this.animateTrackToStatic(200); // 200ms duration
+                        this.updateThumbVisualPosition(finalValue);
+                        this.animateTrackToStatic(200);
                     }
-                    // Clear any bumping classes from markers
-                    this.timeSliderElement.querySelectorAll('.time-slider-marker.bumping').forEach(m => m.classList.remove('bumping'));
+                    if (this.timeSliderElement) { // Ensure element exists
+                        this.timeSliderElement.querySelectorAll('.time-slider-marker.bumping').forEach(m => m.classList.remove('bumping'));
+                    }
                 }
-            });
+            };
+
+            // Event listeners:
+            this.thumbVisualEl.addEventListener('mousedown', handleDragStart);
+            this.thumbVisualEl.addEventListener('touchstart', handleDragStart, { passive: false });
+
+            document.addEventListener('mousemove', handleDocumentDrag);
+            document.addEventListener('touchmove', handleDocumentDrag, { passive: false });
+
+            document.addEventListener('mouseup', handleDocumentDragEnd);
+            document.addEventListener('touchend', handleDocumentDragEnd);
 
             // Close slider if clicked outside
             document.addEventListener('click', (e) => {
@@ -645,20 +676,24 @@ ${loopCode}
         const numSegments = 72; // e.g., every 5 degrees
         const baseRadius = this.trackEffectiveRadius; // 85px
 
+        // Compensate for the visual rotation applied during plotting when determining bump's logical center
+        const effectiveBumpCenterRad = bumpAngleRad + (Math.PI / 2);
+
         for (let i = 0; i <= numSegments; i++) {
-            const segmentAngleRad = (i / numSegments) * 2 * Math.PI;
+            const segmentAngleRad = (i / numSegments) * 2 * Math.PI; // This is Math Angle (0 @ 3 o'clock)
 
             let R = baseRadius;
             // Calculate angular distance to bump center (handle wrapping)
-            let angleDiff = segmentAngleRad - bumpAngleRad;
+            // Both segmentAngleRad and effectiveBumpCenterRad are Math Angles.
+            let angleDiff = segmentAngleRad - effectiveBumpCenterRad;
             while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
             while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
             if (Math.abs(angleDiff) < bumpWidthRad) {
-                // Cosine bell shape for the bump
+                // Cosine bell shape for the bump/dent
                 const normalizedDistance = Math.abs(angleDiff) / bumpWidthRad; // 0 at center, 1 at edge of bump
                 const radialOffset = currentAmplitude * Math.pow(Math.cos(normalizedDistance * Math.PI / 2), 2);
-                R += radialOffset;
+                R -= radialOffset; // Subtract for an inward dent
             }
 
             const x = this.svgCenter + R * Math.cos(segmentAngleRad - Math.PI / 2); // Adjust for 12 o'clock start
@@ -672,28 +707,41 @@ ${loopCode}
         if (!this.trackPathEl) return;
         this.isAnimatingFlush = true;
         const startTime = performance.now();
-        const startAmplitude = 0; // Assuming bump starts from nothing
-        const endAmplitude = 8; // Max bump height in pixels, adjust as needed
+        // Track Path Animation
+        const startTrackAmplitude = 0;
+        const endTrackAmplitude = 8; // Max dent depth
         this.currentBumpAngleRad = targetAngleRad; // Store for dragging
+
+        // Thumb Visual Animation
+        const startThumbR = parseFloat(this.thumbVisualEl.getAttribute('r')) || 7;
+        const endThumbR = 2; // Shrink to this radius
+        const startThumbOpacity = parseFloat(this.thumbVisualEl.style.opacity || 1);
+        const endThumbOpacity = 0;
+        this.thumbVisualEl.style.opacity = startThumbOpacity; // Ensure it's visible at start of JS anim
 
         const animateStep = (currentTime) => {
             const elapsedTime = currentTime - startTime;
             let progress = Math.min(elapsedTime / duration, 1);
-            // Simple ease-out: 1 - Math.pow(1 - progress, 3)
-            progress = 1 - Math.pow(1 - progress, 3);
+            progress = 1 - Math.pow(1 - progress, 3); // Ease-out
 
-
-            const currentAmplitude = startAmplitude + (endAmplitude - startAmplitude) * progress;
-            const d = this.generateBumpedPathD(targetAngleRad, currentAmplitude);
+            // Animate Track Path
+            const currentTrackAmplitude = startTrackAmplitude + (endTrackAmplitude - startTrackAmplitude) * progress;
+            const d = this.generateBumpedPathD(targetAngleRad, currentTrackAmplitude);
             this.trackPathEl.setAttribute('d', d);
+
+            // Animate Thumb Visual
+            const currentThumbR = startThumbR + (endThumbR - startThumbR) * progress;
+            const currentThumbOpacity = startThumbOpacity + (endThumbOpacity - startThumbOpacity) * progress;
+            this.thumbVisualEl.setAttribute('r', currentThumbR);
+            this.thumbVisualEl.style.opacity = currentThumbOpacity;
 
             if (progress < 1) {
                 requestAnimationFrame(animateStep);
             } else {
                 this.isAnimatingFlush = false;
-                this.isThumbFlushed = true; // State to indicate bump is active
-                 // Store final amplitude if needed for dragging
-                this.currentBumpAmplitude = endAmplitude;
+                this.isThumbFlushed = true;
+                this.currentBumpAmplitude = endTrackAmplitude;
+                this.thumbVisualEl.style.opacity = 0; // Ensure it's fully hidden
             }
         };
         requestAnimationFrame(animateStep);
@@ -706,34 +754,109 @@ ${loopCode}
         }
         this.isAnimatingFlush = true; // Use the same flag to prevent conflicting animations
         const startTime = performance.now();
-        const startAmplitude = this.currentBumpAmplitude;
-        const endAmplitude = 0;
-        // Use the last known bump angle for the path deformation as it flattens
-        const bumpAngleForAnimation = this.currentBumpAngleRad;
+        // Track Path Animation
+        const startTrackAmplitude = this.currentBumpAmplitude;
+        const endTrackAmplitude = 0;
+        const bumpAngleForAnimation = this.currentBumpAngleRad; // Keep bump at last angle while it flattens
+
+        // Thumb Visual Animation (reappear)
+        const startThumbR = parseFloat(this.thumbVisualEl.getAttribute('r')) || 2; // Should be small from flush anim
+        const endThumbR = 7; // Default radius
+        const startThumbOpacity = parseFloat(this.thumbVisualEl.style.opacity) || 0;
+        const endThumbOpacity = 1;
+        // cx, cy for thumbVisualEl are already set by updateThumbVisualPosition in mouseup
 
         const animateStep = (currentTime) => {
             const elapsedTime = currentTime - startTime;
             let progress = Math.min(elapsedTime / duration, 1);
-            // Simple ease-in-out: progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-            // Or use the same ease-out as the flush:
-            progress = 1 - Math.pow(1 - progress, 3);
+            progress = 1 - Math.pow(1 - progress, 3); // Ease-out
 
-
-            const currentAmplitude = startAmplitude + (endAmplitude - startAmplitude) * progress;
-            const d = this.generateBumpedPathD(bumpAngleForAnimation, currentAmplitude);
+            // Animate Track Path to flat
+            const currentTrackAmplitude = startTrackAmplitude + (endTrackAmplitude - startTrackAmplitude) * progress;
+            const d = this.generateBumpedPathD(bumpAngleForAnimation, currentTrackAmplitude);
             this.trackPathEl.setAttribute('d', d);
+
+            // Animate Thumb Visual to reappear
+            const currentThumbR = startThumbR + (endThumbR - startThumbR) * progress;
+            const currentThumbOpacity = startThumbOpacity + (endThumbOpacity - startThumbOpacity) * progress;
+            this.thumbVisualEl.setAttribute('r', currentThumbR);
+            this.thumbVisualEl.style.opacity = currentThumbOpacity;
 
             if (progress < 1) {
                 requestAnimationFrame(animateStep);
             } else {
-                // this.trackPathEl.setAttribute('d', this.generateBumpedPathD(bumpAngleForAnimation, 0)); // Ensure perfectly flat
-                this.drawStaticTrackPath(); // More reliable to return to the exact static path
+                this.drawStaticTrackPath(); // Ensure track is perfectly flat
+                this.thumbVisualEl.setAttribute('r', endThumbR); // Ensure thumb is correct size
+                this.thumbVisualEl.style.opacity = endThumbOpacity; // Ensure thumb is fully visible
                 this.isAnimatingFlush = false;
                 this.isThumbFlushed = false;
                 this.currentBumpAmplitude = 0;
             }
         };
         requestAnimationFrame(animateStep);
+    },
+
+    animateSliderToValue(targetValue, currentValue, duration) {
+        if (!this.timeSliderElement || this.timeSliderElement.style.display !== 'flex' || this.isAnimatingFlush) {
+            // If slider not visible, or an animation is already running, just update thumb to final spot.
+            this.updateThumbVisualPosition(targetValue);
+            this.updateSliderFromValue(targetValue); // Update text
+            // Ensure internal angle is also set for future interactions
+            const maxValue = 60;
+            let finalDisplayAngleDeg = (targetValue / maxValue) * 360;
+            this.currentBumpAngleRad = ((finalDisplayAngleDeg - 90 + 360) % 360) * Math.PI / 180;
+            this.currentBumpAmplitude = 0;
+            this.isThumbFlushed = false;
+            this.drawStaticTrackPath();
+            if(this.thumbVisualEl) this.thumbVisualEl.classList.remove('flushing');
+            return;
+        }
+
+        this.isAnimatingFlush = true; // Use this flag to block other interactions
+
+        // Ensure slider is in a "thumb visible, track flat" state before starting glide animation
+        if (this.isThumbFlushed || this.currentBumpAmplitude > 0) {
+            this.drawStaticTrackPath(); // Flatten track immediately
+            this.currentBumpAmplitude = 0;
+            this.isThumbFlushed = false;
+            if(this.thumbVisualEl) {
+                this.thumbVisualEl.style.opacity = 1;
+                this.thumbVisualEl.setAttribute('r', '7'); // Default radius
+                // Position thumb at the 'currentValue' from which animation will start
+                this.updateThumbVisualPosition(currentValue);
+            }
+        } else {
+            // If thumb was already visible, ensure it's at the correct starting position for the animation
+             if(this.thumbVisualEl) {
+                this.updateThumbVisualPosition(currentValue);
+             }
+        }
+
+
+        const startTime = performance.now();
+        const animate = (currentTime) => {
+            const elapsedTime = currentTime - startTime;
+            let progress = Math.min(elapsedTime / duration, 1);
+            progress = 0.5 - 0.5 * Math.cos(progress * Math.PI); // Ease in-out
+
+            const animatedValue = currentValue + (targetValue - currentValue) * progress;
+
+            this.updateThumbVisualPosition(animatedValue); // Move the thumb
+            this.updateSliderFromValue(animatedValue);    // Update text
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                this.updateThumbVisualPosition(targetValue); // Ensure final position
+                this.updateSliderFromValue(targetValue);
+                this.isAnimatingFlush = false;
+                // Update internal angle for future interactions
+                const maxValue = 60;
+                let finalDisplayAngleDeg = (targetValue / maxValue) * 360;
+                this.currentBumpAngleRad = ((finalDisplayAngleDeg - 90 + 360) % 360) * Math.PI / 180;
+            }
+        };
+        requestAnimationFrame(animate);
     },
 
     showTimeSlider(inputElement) {
@@ -817,15 +940,16 @@ ${loopCode}
         }
     },
 
-    handleSliderDrag(event) {
+    handleSliderDrag(coords) { // Changed 'event' to 'coords'
         if (!this.isDraggingSlider || !this.timeSliderElement || !this.isThumbFlushed) return;
 
         const sliderRect = this.svgEl.getBoundingClientRect(); // Use SVG rect
         const centerX = sliderRect.left + this.svgCenter;
         const centerY = sliderRect.top + this.svgCenter;
 
-        const deltaX = event.clientX - centerX;
-        const deltaY = event.clientY - centerY;
+        // Use coords.x and coords.y from getEventCoordinates
+        const deltaX = coords.x - centerX;
+        const deltaY = coords.y - centerY;
         let angleRad = Math.atan2(deltaY, deltaX); // Radians, 0 @ 3 o'clock
 
         // Update track path with new bump position
