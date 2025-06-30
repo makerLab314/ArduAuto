@@ -404,6 +404,7 @@ const RoboProgrammer = {
 void setup() {
   Serial.begin(9600);
   Serial.println("Roboter-Auto startklar.");
+  HCSR04.begin(trigPin, echoPin);
 
 ${setupCode}
 
