@@ -440,7 +440,7 @@ const RoboProgrammer = {
 void setup() {
   Serial.begin(9600);
   Serial.println("Roboter-Auto Cyber-Luxe Edition startklar.");
-  // HCSR04.begin(trigPin, echoPin); // Initialisierung des Sensors, falls verwendet
+  HCSR04.begin(trigPin, echoPin); // Initialisierung des Sensors, falls verwendet
 
 ${setupCode}
 
