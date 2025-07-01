@@ -66,7 +66,56 @@ const RoboProgrammer = {
         };
     },
     
-    initSortable(rootElement = this.els.dropzone, stateArray = this.state) { /* ... (wie gehabt) ... */ },
+    initSortable(rootElement = this.els.dropzone, stateArray = this.state) {
+        if (!rootElement) {
+            console.error("Sortable rootElement is null. State array:", stateArray);
+            return;
+        }
+        const isMainDropzone = rootElement === this.els.dropzone;
+
+        new Sortable(rootElement, {
+            group: {
+                name: 'shared',
+                put: true // Allow items to be put into this sortable
+            },
+            animation: 150,
+            draggable: '.programm-block', // Only items already in the program area are blocks
+            handle: '.handle', // Use a handle for dragging existing blocks
+            onAdd: (evt) => {
+                // This event fires when a block is dragged from the palette (clone)
+                // or from another sortable (if not cloning, like from an if-branch to main)
+                if (evt.from.closest('#baustein-palette')) { // Item comes from palette
+                    this.handleBlockAdd(evt, stateArray);
+                } else {
+                    // This handles moving from a nested sortable (e.g., if-branch) to this sortable
+                    // We need to find the block in the original stateArray (evt.item.dataset.id)
+                    // and move it to the new stateArray.
+                    // SortableJS already moves the DOM element. We need to update the state.
+                    const blockId = evt.item.dataset.id;
+                    const originalLocation = this.findBlockAndParent(blockId); // Search in global state
+
+                    if (originalLocation && originalLocation.parent !== stateArray) { // Ensure it's not a sort within the same list
+                        const [movedBlock] = originalLocation.parent.splice(originalLocation.index, 1);
+                        stateArray.splice(evt.newIndex, 0, movedBlock);
+                        this.saveToHistory();
+                        this.updateUI(); // Re-render to ensure all states are consistent
+                    } else if (originalLocation && originalLocation.parent === stateArray) {
+                        // This case should be covered by onUpdate if it's within the same list
+                        // However, if it's a direct add from a non-palette source that ISN'T a different nested list
+                        // (which is less common), we might need to handle it.
+                        // For now, assume onUpdate handles same-list sorts.
+                    }
+                }
+            },
+            onUpdate: (evt) => {
+                // This event fires when a block is reordered within the same list
+                this.handleBlockMove(evt, stateArray);
+            },
+            // Fallback for items that might not be .programm-block (e.g. items from palette)
+            // This is more relevant if we didn't have separate logic for palette items
+            // filter: '.ignore-sortable',
+        });
+    },
     addEventListeners() { /* ... (wie gehabt, ohne Slider-Drag-Listener hier) ... */
         this.els.undoBtn.addEventListener('click', () => this.undo());
         this.els.redoBtn.addEventListener('click', () => this.redo());
